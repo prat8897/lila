@@ -105,11 +105,6 @@ final class Env(
     userJson = userJson
   )
 
-  lazy val userHistory = new UserHistory(
-    logApi = logApi,
-    reportApi = reportApi
-  )
-
   lazy val inquiryApi = new InquiryApi(reportApi, noteApi, logApi)
 
   // api actor
@@ -125,8 +120,12 @@ final class Env(
         if (game.status == chess.Status.Cheat)
           game.loserUserId foreach { logApi.cheatDetected(_, game.id) }
       case lila.hub.actorApi.mod.ChatTimeout(mod, user, reason) => logApi.chatTimeout(mod, user, reason)
+      case lila.hub.actorApi.security.GarbageCollect(userId, ipBan) =>
+        reportApi getSuspect userId flatten s"No such suspect $userId" flatMap { sus =>
+          api.garbageCollect(sus, ipBan) >> publicChat.delete(sus)
+        }
     }
-  }), name = ActorName), 'finishGame, 'analysisReady)
+  }), name = ActorName), 'finishGame, 'analysisReady, 'garbageCollect)
 }
 
 object Env {

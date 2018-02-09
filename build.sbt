@@ -30,7 +30,7 @@ externalizeResources := false
 scriptClasspath := Seq("*")
 // offline := true
 libraryDependencies ++= Seq(
-  scalaz, chess, scalalib, hasher, typesafeConfig, findbugs,
+  scalaz, chess, compression, scalalib, hasher, typesafeConfig, findbugs,
   reactivemongo.driver, reactivemongo.iteratees, akka.actor, akka.slf4j,
   maxmind, prismic, netty, guava,
   kamon.core, kamon.influxdb,
@@ -63,7 +63,7 @@ lazy val modules = Seq(
   playban, insight, perfStat, slack, quote, challenge,
   study, studySearch, fishnet, explorer, learn, plan,
   event, coach, practice, evalCache, irwin,
-  activity, relay
+  activity, relay, streamer
 )
 
 lazy val moduleRefs = modules map projectToRef
@@ -97,7 +97,13 @@ lazy val video = module("video", Seq(
 lazy val coach = module("coach", Seq(
   common, hub, db, user, security, notifyModule
 )).settings(
-  libraryDependencies ++= provided(play.api, reactivemongo.driver, scrimage)
+  libraryDependencies ++= provided(play.api, reactivemongo.driver)
+)
+
+lazy val streamer = module("streamer", Seq(
+  common, hub, db, user, notifyModule
+)).settings(
+  libraryDependencies ++= provided(play.api, reactivemongo.driver)
 )
 
 lazy val coordinate = module("coordinate", Seq(common, db)).settings(
@@ -141,7 +147,7 @@ lazy val history = module("history", Seq(common, db, memo, game, user)).settings
 )
 
 lazy val db = module("db", Seq(common)).settings(
-  libraryDependencies ++= provided(play.test, play.api, reactivemongo.driver, hasher)
+  libraryDependencies ++= provided(play.test, play.api, reactivemongo.driver, hasher, scrimage)
 )
 
 lazy val memo = module("memo", Seq(common, db)).settings(
@@ -176,7 +182,7 @@ lazy val user = module("user", Seq(common, memo, db, hub, rating)).settings(
 )
 
 lazy val game = module("game", Seq(common, memo, db, hub, user, chat)).settings(
-  libraryDependencies ++= provided(play.api, reactivemongo.driver, reactivemongo.iteratees)
+  libraryDependencies ++= provided(compression, play.api, reactivemongo.driver, reactivemongo.iteratees)
 )
 
 lazy val gameSearch = module("gameSearch", Seq(common, hub, search, game)).settings(
@@ -249,7 +255,7 @@ lazy val simul = module("simul", Seq(
   libraryDependencies ++= provided(play.api, reactivemongo.driver)
 )
 
-lazy val fishnet = module("fishnet", Seq(common, game, analyse, db)).settings(
+lazy val fishnet = module("fishnet", Seq(common, game, analyse, db, evalCache)).settings(
   libraryDependencies ++= provided(play.api, reactivemongo.driver, semver)
 )
 
@@ -367,9 +373,7 @@ lazy val bookmark = module("bookmark", Seq(common, memo, db, hub, user, game)).s
 )
 
 lazy val report = module("report", Seq(common, db, user, game, security)).settings(
-  libraryDependencies ++= provided(
-    play.api, reactivemongo.driver
-  )
+  libraryDependencies ++= provided(play.api, reactivemongo.driver, reactivemongo.iteratees)
 )
 
 lazy val explorer = module("explorer", Seq(common, db, game, importer)).settings(

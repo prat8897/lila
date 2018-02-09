@@ -23,6 +23,7 @@ case class Chapter(
     gamebook: Option[Boolean] = None,
     description: Option[String] = None,
     relay: Option[Chapter.Relay] = None,
+    serverEval: Option[Chapter.ServerEval] = None,
     createdAt: DateTime
 ) extends Chapter.Like {
 
@@ -78,9 +79,15 @@ case class Chapter(
   def withoutChildren = copy(root = root.withoutChildren)
 
   def relayAndTags = relay map { Chapter.RelayAndTags(id, _, tags) }
+
+  def isOverweight = root.children.countRecursive >= Chapter.maxNodes
 }
 
 object Chapter {
+
+  // I've seen chapters with 35,000 nodes on prod.
+  // It works but could be used for DoS.
+  val maxNodes = 3000
 
   case class Id(value: String) extends AnyVal with StringValue
   implicit val idIso = lila.common.Iso.string[Id](Id.apply, _.value)
@@ -113,6 +120,8 @@ object Chapter {
   ) {
     def secondsSinceLastMove: Int = (nowSeconds - lastMoveAt.getSeconds).toInt
   }
+
+  case class ServerEval(path: Path, done: Boolean)
 
   case class RelayAndTags(id: Id, relay: Relay, tags: Tags) {
 

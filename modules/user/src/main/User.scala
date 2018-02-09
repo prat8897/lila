@@ -27,7 +27,8 @@ case class User(
     kid: Boolean,
     lang: Option[String],
     plan: Plan,
-    reportban: Boolean = false
+    reportban: Boolean = false,
+    rankban: Boolean = false
 ) extends Ordered[User] {
 
   override def equals(other: Any) = other match {
@@ -84,16 +85,17 @@ case class User(
 
   def lightCount = User.LightCount(light, count.game)
 
-  private def best4Of(perfTypes: List[PerfType]) =
+  private def bestOf(perfTypes: List[PerfType], nb: Int) =
     perfTypes.sortBy { pt =>
       -(perfs(pt).nb * PerfType.totalTimeRoughEstimation.get(pt).fold(0)(_.centis))
-    } take 4
+    } take nb
 
-  private val firstRow: List[PerfType] = List(PerfType.Bullet, PerfType.Blitz, PerfType.Classical, PerfType.Correspondence)
+  private val firstRow: List[PerfType] = List(PerfType.Bullet, PerfType.Blitz, PerfType.Rapid, PerfType.Classical, PerfType.Correspondence)
   private val secondRow: List[PerfType] = List(PerfType.UltraBullet, PerfType.Crazyhouse, PerfType.Chess960, PerfType.KingOfTheHill, PerfType.ThreeCheck, PerfType.Antichess, PerfType.Atomic, PerfType.Horde, PerfType.RacingKings)
 
-  def best8Perfs: List[PerfType] =
-    best4Of(firstRow) ::: best4Of(secondRow)
+  def best8Perfs: List[PerfType] = bestOf(firstRow, 4) ::: bestOf(secondRow, 4)
+
+  def best6Perfs: List[PerfType] = bestOf(firstRow ::: secondRow, 6)
 
   def hasEstablishedRating(pt: PerfType) = perfs(pt).established
 
@@ -104,6 +106,8 @@ case class User(
   def planMonths: Option[Int] = activePlan.map(_.months)
 
   def createdSinceDays(days: Int) = createdAt isBefore DateTime.now.minusDays(days)
+
+  def is(name: String) = id == User.normalize(name)
 }
 
 object User {
@@ -196,6 +200,7 @@ object User {
     val colorIt = "colorIt"
     val plan = "plan"
     val reportban = "reportban"
+    val rankban = "rankban"
     val salt = "salt"
     val bpass = "bpass"
     val sha512 = "sha512"
@@ -233,7 +238,8 @@ object User {
       lang = r strO lang,
       title = r strO title,
       plan = r.getO[Plan](plan) | Plan.empty,
-      reportban = r boolD reportban
+      reportban = r boolD reportban,
+      rankban = r boolD rankban
     )
 
     def writes(w: BSON.Writer, o: User) = BSONDocument(
@@ -256,7 +262,8 @@ object User {
       lang -> o.lang,
       title -> o.title,
       plan -> o.plan.nonEmpty,
-      reportban -> w.boolO(o.reportban)
+      reportban -> w.boolO(o.reportban),
+      rankban -> w.boolO(o.rankban)
     )
   }
 }

@@ -91,14 +91,14 @@ object TournamentRepo {
   def finishedNotable(limit: Int): Fu[List[Tournament]] =
     coll.find(finishedSelect ++ $doc(
       "$or" -> $arr(
-        $doc("nbPlayers" $gte 15),
+        $doc("nbPlayers" $gte 30),
         scheduledSelect
       )
     ))
       .sort($doc("startsAt" -> -1))
       .list[Tournament](limit)
 
-  def finishedPaginator(maxPerPage: Int, page: Int) = Paginator(
+  def finishedPaginator(maxPerPage: lila.common.MaxPerPage, page: Int) = Paginator(
     adapter = new CachedAdapter(
       new Adapter[Tournament](
         collection = coll,
@@ -158,7 +158,7 @@ object TournamentRepo {
     import Schedule.Freq._
     tour.schedule.map(_.freq) map {
       case Unique | Yearly | Marathon => 24 * 60
-      case Monthly => 6 * 60
+      case Monthly | Shield => 6 * 60
       case Weekly | Weekend => 3 * 60
       case Daily => 1 * 60
       case _ => 30
@@ -233,4 +233,10 @@ object TournamentRepo {
         )
     ).list[Tournament](none, ReadPreference.secondaryPreferred)
   }
+
+  def calendar(from: DateTime, to: DateTime): Fu[List[Tournament]] =
+    coll.find($doc(
+      "startsAt" $gte from $lte to,
+      "schedule.freq" $in Schedule.Freq.all.filter(_.isWeeklyOrBetter)
+    )).sort($sort asc "startsAt").list[Tournament](none, ReadPreference.secondaryPreferred)
 }

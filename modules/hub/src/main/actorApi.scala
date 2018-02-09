@@ -45,12 +45,25 @@ package report {
   case class Processed(userId: String, reason: String)
 }
 
+package security {
+  case class GarbageCollect(userId: String, ipBan: Boolean)
+  case class CloseAccount(userId: String)
+}
+
 package shutup {
   case class RecordPublicForumMessage(userId: String, text: String)
   case class RecordTeamForumMessage(userId: String, text: String)
   case class RecordPrivateMessage(userId: String, toUserId: String, text: String)
   case class RecordPrivateChat(chatId: String, userId: String, text: String)
-  case class RecordPublicChat(chatId: String, userId: String, text: String)
+  case class RecordPublicChat(userId: String, text: String, source: PublicSource)
+
+  sealed trait PublicSource
+  object PublicSource {
+    case class Tournament(id: String) extends PublicSource
+    case class Simul(id: String) extends PublicSource
+    case class Study(id: String) extends PublicSource
+    case class Watcher(gameId: String) extends PublicSource
+  }
 }
 
 package mod {
@@ -144,6 +157,9 @@ package timeline {
   case class BlogPost(id: String, slug: String, title: String) extends Atom("blogPost", true) {
     def userIds = Nil
   }
+  case class StreamStart(id: String, name: String) extends Atom("streamStart", true) {
+    def userIds = List(id)
+  }
 
   object propagation {
     sealed trait Propagation
@@ -189,6 +205,15 @@ package team {
 
 package fishnet {
   case class AutoAnalyse(gameId: String)
+  case class NewKey(userId: String, key: String)
+  case class StudyChapterRequest(
+      studyId: String,
+      chapterId: String,
+      initialFen: Option[chess.format.FEN],
+      variant: chess.variant.Variant,
+      moves: List[chess.format.Uci],
+      userId: Option[String]
+  )
 }
 
 package user {

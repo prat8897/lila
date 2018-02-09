@@ -1,8 +1,13 @@
-@(tour: Tournament, verdicts: lila.tournament.Condition.All.WithVerdicts)(implicit ctx: Context)
+@(tour: Tournament, verdicts: lila.tournament.Condition.All.WithVerdicts, streamers: Set[User.ID])(implicit ctx: Context)
 
 <div class="side_box padded">
   <div class="game_infos" data-icon="@tour.perfType.map(_.iconChar)">
     <div class="header">
+      @if(isGranted(_.TerminateTournament)) {
+      <form class="terminate" method="post" action="@routes.Tournament.terminate(tour.id)" style="float: right;">
+        <button data-icon="j" class="submit text fbt confirm" type="submit" title="Terminates the tournament immediately"></button>
+      </form>
+      }
       <span class="setup">
         @tour.clock.show •
         @if(tour.variant.exotic) {
@@ -14,9 +19,9 @@
         • @trans.thematic()
         } • @tour.durationString
       </span>
-      @tour.mode.fold(trans.casual, trans.rated)() •
+      @tour.mode.fold(trans.casualTournament, trans.ratedTournament)() •
       @systemName(tour.system).capitalize
-      (<a href="@routes.Tournament.help(tour.system.toString.toLowerCase.some)">?</a>)
+      <a class="blue help" href="@routes.Tournament.help(tour.system.toString.toLowerCase.some)" data-icon=""></a>
     </div>
   </div>
   @tour.spotlight.map { s =>
@@ -52,11 +57,7 @@
   <br /><br />
   @trans.winner(): @userIdLink(userId.some)
   }
-  @if(isGranted(_.TerminateTournament)) {
-  <form class="terminate" method="post" action="@routes.Tournament.terminate(tour.id)"
-    style="margin-top: 7px; text-align: right;">
-    <button data-icon="j" class="submit text button thin confirm" type="submit"
-      title="Terminates the tournament immediately">Terminate now</button>
-  </form>
-  }
 </div>
+@streamers.map { id =>
+<a href="@routes.Streamer.show(id)" class="context-streamer text side_box" data-icon="">@usernameOrId(id) is streaming</a>
+}

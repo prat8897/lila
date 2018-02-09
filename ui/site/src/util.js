@@ -1,6 +1,6 @@
 var lichess = window.lichess = window.lichess || {};
 
-lichess.engineName = 'Stockfish 8+';
+lichess.engineName = 'Stockfish 9+';
 
 lichess.raf = (window.requestAnimationFrame || window.setTimeout).bind(window);
 lichess.requestIdleCallback = (window.requestIdleCallback || window.setTimeout).bind(window);
@@ -73,6 +73,27 @@ lichess.once = function(key, mod) {
   }
   return false;
 };
+lichess.fp = {};
+lichess.fp.contains = function(list, needle) {
+  return list.indexOf(needle) !== -1;
+};
+lichess.fp.debounce = function(func, wait, immediate) {
+  var timeout;
+  var lastBounce = 0;
+  return function() {
+    var context = this,
+      args = arguments,
+      elapsed = Date.now() - lastBounce;
+    lastBounce = Date.now();
+    var later = function() {
+      timeout = null;
+      func.apply(context, args);
+    };
+    clearTimeout(timeout);
+    if (immediate && elapsed > wait) func.apply(context, args);
+    else timeout = setTimeout(later, wait);
+  };
+};
 lichess.powertip = (function() {
 
   var elementIdContains = function(id, contained) {
@@ -125,6 +146,12 @@ lichess.powertip = (function() {
     $.powerTip.show(el, ev);
   };
 
+  function onIdleForAll(par, sel, fun) {
+    lichess.requestIdleCallback(function() {
+      Array.prototype.forEach.call(par.querySelectorAll(sel), fun);
+    });
+  }
+
   return {
     mouseover: function(e) {
       var t = e.target,
@@ -133,16 +160,10 @@ lichess.powertip = (function() {
       else if (cl.contains('glpt')) powerTipWith(t, e, gamePowertip);
     },
     manualGameIn: function(parent) {
-      lichess.requestIdleCallback(function() {
-        Array.prototype.forEach.call(parent.querySelectorAll('.glpt'), gamePowertip);
-      });
+      onIdleForAll(parent, '.glpt', gamePowertip);
     },
     manualUserIn: function(parent) {
-      lichess.requestIdleCallback(function() {
-        Array.prototype.forEach.call(parent.querySelectorAll('.ulpt'), function(el) {
-          userPowertip(el);
-        });
-      });
+      onIdleForAll(parent, '.ulpt', function(el) { userPowertip(el) });
     }
   };
 })();
@@ -193,7 +214,7 @@ lichess.unloadCss = function(url) {
     lichess.loadedCss[url]  = false;
     $('head link[rel=stylesheet]')
       .filter(function() { return this.href.indexOf(url) >= 0 })
-        .remove();
+      .remove();
   }
 }
 lichess.loadScript = function(url, opts) {
@@ -339,16 +360,41 @@ lichess.pubsub = (function() {
 })();
 lichess.hasToReload = false;
 lichess.redirectInProgress = false;
+lichess.redirect = function(obj) {
+  var url;
+  if (typeof obj == "string") url = obj;
+  else {
+    url = obj.url;
+    if (obj.cookie) {
+      var domain = document.domain.replace(/^.+(\.[^\.]+\.[^\.]+)$/, '$1');
+      var cookie = [
+        encodeURIComponent(obj.cookie.name) + '=' + obj.cookie.value,
+        '; max-age=' + obj.cookie.maxAge,
+        '; path=/',
+        '; domain=' + domain
+      ].join('');
+      document.cookie = cookie;
+    }
+  }
+  var href = '//' + location.hostname + '/' + url.replace(/^\//, '');
+  lichess.redirectInProgress = href;
+  location.href = href;
+};
 lichess.reload = function() {
   if (lichess.redirectInProgress) return;
   lichess.hasToReload = true;
   if (window.location.hash) location.reload();
   else location.href = location.href;
 };
-lichess.escapeHtml = function(html) {
-  var div = document.createElement('div');
-  div.appendChild(document.createTextNode(html));
-  return div.innerHTML;
+lichess.escapeHtml = function(str) {
+  return /[&<>\"\']/.test(str) ?
+  str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/'/g, '&#39;')
+    .replace(/"/g, '&quot;') :
+    str;
 };
 lichess.toYouTubeEmbedUrl = function(url) {
   if (!url) return;

@@ -12,7 +12,7 @@ public class StringUtils {
             boolean safe = c >= ' ' && c <= '~';
             if (safe) switch(c) {
                 case '<': case '>': case '&': case '"':
-                case '\'': case '\\': case '`': case '/':
+                case '\'': case '\\': case '`':
                   safe = false;
             }
 
@@ -30,20 +30,20 @@ public class StringUtils {
         return sb.toString();
     }
 
-    // Extensively profiled with jmh. It is faster to pass
-    // around the String reference than to reuse the char
-    // array.
-    public static String escapeHtmlUnsafe(String s) {
+    public static String escapeHtml(String s) {
+        // Extensively profiled with jmh. It is faster to pass
+        // around the String reference than to reuse the char
+        // array.
         for (char c : s.toCharArray()) {
             switch (c) {
                 case '<': case '>': case '&': case '"': case '\'':
-                  return realHtmlEscape(s);
+                  return reallyEscapeHtml(s);
             }
         }
         return s;
     }
 
-    private static String realHtmlEscape(String s) {
+    private static String reallyEscapeHtml(String s) {
         char[] sArr = s.toCharArray();
         StringBuilder sb = new StringBuilder(sArr.length + 10);
         for (char c : sArr) {
@@ -77,7 +77,7 @@ public class StringUtils {
      * between two strings is no greater than the sum Levenshtein distances from
      * a third string).
      *
-     * Implementation uses dynamic programming (Wagner–Fischer algorithm), with
+     * Implementation uses dynamic programming (Wagner-Fischer algorithm), with
      * only 2 rows of data. The space requirement is thus O(m) and the algorithm
      * runs in O(mn).
      *

@@ -1,4 +1,4 @@
-@(withCeval: Boolean = true, withExplorer: Boolean = true)(implicit ctx: Context)
+@(withCeval: Boolean = true, withExplorer: Boolean = true, withForecast: Boolean = false)(implicit ctx: Context)
 @import play.api.libs.json.Json
 @safeJson(i18nJsObject(
 trans.analysis,
@@ -23,6 +23,15 @@ trans.whitePlays,
 trans.blackPlays,
 trans.gameOver,
 trans.importPgn,
+trans.requestAComputerAnalysis,
+trans.computerAnalysis,
+trans.learnFromYourMistakes,
+trans.averageCentipawnLoss,
+trans.inaccuracies,
+trans.mistakes,
+trans.blunders,
+trans.goodMove,
+trans.viewTheSolution,
 // action menu
 trans.menu,
 trans.boardEditor,
@@ -35,7 +44,31 @@ trans.inlineNotation,
 trans.replayMode,
 trans.slow,
 trans.fast,
-trans.realtimeReplay
+trans.realtimeReplay,
+// context menu
+trans.promoteVariation,
+trans.makeMainLine,
+trans.deleteFromHere,
+// practice (also uses checkmate, draw)
+trans.practiceWithComputer,
+trans.goodMove,
+trans.inaccuracy,
+trans.mistake,
+trans.blunder,
+trans.threefoldRepetition,
+trans.anotherWasX,
+trans.bestWasX,
+trans.youBrowsedAway,
+trans.resumePractice,
+trans.whiteWinsGame,
+trans.blackWinsGame,
+trans.theGameIsADraw,
+trans.yourTurn,
+trans.computerThinking,
+trans.seeBestMove,
+trans.hideBestMove,
+trans.getAHint,
+trans.evaluatingYourMove
 ) ++ withCeval.fold(i18nJsObject(
 // ceval (also uses gameOver)
 trans.depthX,
@@ -88,4 +121,12 @@ trans.maybeIncludeMoreGamesFromThePreferencesMenu,
 trans.winPreventedBy50MoveRule,
 trans.lossSavedBy50MoveRule,
 trans.allSet
+), Json.obj()) ++ withForecast.fold(i18nJsObject(
+// forecast
+trans.conditionalPremoves,
+trans.addCurrentVariation,
+trans.playVariationToCreateConditionalPremoves,
+trans.noConditionalPremoves,
+trans.playX,
+trans.andSaveNbPremoveLines
 ), Json.obj()))

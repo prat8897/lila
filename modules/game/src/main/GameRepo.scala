@@ -7,7 +7,7 @@ import chess.{ Color, Status }
 import org.joda.time.DateTime
 import reactivemongo.api.commands.GetLastError
 import reactivemongo.api.{ CursorProducer, ReadPreference }
-import reactivemongo.bson.BSONBinary
+import reactivemongo.bson.BSONDocument
 
 import lila.db.BSON.BSONJodaDateTimeHandler
 import lila.db.ByteArray
@@ -31,8 +31,8 @@ object GameRepo {
   def gamesFromSecondary(gameIds: Seq[ID]): Fu[List[Game]] =
     coll.byOrderedIds[Game, Game.ID](gameIds, readPreference = ReadPreference.secondaryPreferred)(_.id)
 
-  def gameOptions(gameIds: Seq[ID]): Fu[Seq[Option[Game]]] =
-    coll.optionsByOrderedIds[Game, Game.ID](gameIds)(_.id)
+  def gameOptionsFromSecondary(gameIds: Seq[ID]): Fu[List[Option[Game]]] =
+    coll.optionsByOrderedIds[Game, Game.ID](gameIds, ReadPreference.secondaryPreferred)(_.id)
 
   def finished(gameId: ID): Fu[Option[Game]] =
     coll.uno[Game]($id(gameId) ++ Query.finished)
@@ -82,7 +82,7 @@ object GameRepo {
       ++ Query.rated
       ++ Query.user(userId)
       ++ Query.analysed(true)
-      ++ Query.turnsMoreThan(20)
+      ++ Query.turnsGt(20)
       ++ Query.clockHistory(true)
   )
     .sort($sort asc F.createdAt)
@@ -92,7 +92,7 @@ object GameRepo {
     Query.finished
       ++ Query.rated
       ++ Query.user(userId)
-      ++ Query.turnsMoreThan(22)
+      ++ Query.turnsGt(22)
       ++ Query.variantStandard
       ++ Query.clock(true)
   )
@@ -102,28 +102,15 @@ object GameRepo {
   def cursor(
     selector: Bdoc,
     readPreference: ReadPreference = ReadPreference.secondaryPreferred
-  )(
-    implicit
-    cp: CursorProducer[Game]
-  ) =
+  )(implicit cp: CursorProducer[Game]) =
     coll.find(selector).cursor[Game](readPreference)
 
   def sortedCursor(
     selector: Bdoc,
     sort: Bdoc,
     readPreference: ReadPreference = ReadPreference.secondaryPreferred
-  )(
-    implicit
-    cp: CursorProducer[Game]
-  ) =
+  )(implicit cp: CursorProducer[Game]) =
     coll.find(selector).sort(sort).cursor[Game](readPreference)
-
-  def unrate(gameId: String) =
-    coll.update($id(gameId), $doc("$unset" -> $doc(
-      F.rated -> true,
-      s"${F.whitePlayer}.${Player.BSONFields.ratingDiff}" -> true,
-      s"${F.blackPlayer}.${Player.BSONFields.ratingDiff}" -> true
-    )))
 
   def goBerserk(pov: Pov): Funit =
     coll.update($id(pov.gameId), $set(
@@ -187,7 +174,7 @@ object GameRepo {
     Query.user(user.id) ++
       Query.rated ++
       Query.finished ++
-      Query.turnsMoreThan(2) ++
+      Query.turnsGt(2) ++
       Query.notFromPosition
   ).sort(Query.sortAntiChronological).uno[Game]
 
@@ -229,36 +216,37 @@ object GameRepo {
 
   def setBorderAlert(pov: Pov) = setHoldAlert(pov, 0, 0, 20.some)
 
+  private val finishUnsets = $doc(
+    F.positionHashes -> true,
+    F.playingUids -> true,
+    F.unmovedRooks -> true,
+    ("p0." + Player.BSONFields.lastDrawOffer) -> true,
+    ("p1." + Player.BSONFields.lastDrawOffer) -> true,
+    ("p0." + Player.BSONFields.isOfferingDraw) -> true,
+    ("p1." + Player.BSONFields.isOfferingDraw) -> true,
+    ("p0." + Player.BSONFields.proposeTakebackAt) -> true,
+    ("p1." + Player.BSONFields.proposeTakebackAt) -> true
+  )
+
   def finish(
     id: ID,
     winnerColor: Option[Color],
     winnerId: Option[String],
     status: Status
-  ) = {
-    val partialUnsets = $doc(
-      F.positionHashes -> true,
-      F.playingUids -> true,
-      F.unmovedRooks -> true,
-      ("p0." + Player.BSONFields.lastDrawOffer) -> true,
-      ("p1." + Player.BSONFields.lastDrawOffer) -> true,
-      ("p0." + Player.BSONFields.isOfferingDraw) -> true,
-      ("p1." + Player.BSONFields.isOfferingDraw) -> true,
-      ("p0." + Player.BSONFields.proposeTakebackAt) -> true,
-      ("p1." + Player.BSONFields.proposeTakebackAt) -> true
+  ) = coll.update(
+    $id(id),
+    nonEmptyMod("$set", $doc(
+      F.winnerId -> winnerId,
+      F.winnerColor -> winnerColor.map(_.white),
+      F.status -> status
+    )) ++ $doc(
+      "$unset" -> finishUnsets.++ {
+        // keep the checkAt field when game is aborted,
+        // so it gets deleted in 24h
+        (status >= Status.Mate) ?? $doc(F.checkAt -> true)
+      }
     )
-    // keep the checkAt field when game is aborted,
-    // so it gets deleted in 24h
-    val unsets =
-      if (status >= Status.Mate) partialUnsets ++ $doc(F.checkAt -> true)
-      else partialUnsets
-    coll.update(
-      $id(id),
-      nonEmptyMod("$set", $doc(
-        F.winnerId -> winnerId,
-        F.winnerColor -> winnerColor.map(_.white)
-      )) ++ $doc("$unset" -> unsets)
-    )
-  }
+  )
 
   def findRandomStandardCheckmate(distribution: Int): Fu[Option[Game]] = coll.find(
     Query.mate ++ Query.variantStandard
@@ -267,7 +255,7 @@ object GameRepo {
     .uno[Game]
 
   def findRandomFinished(distribution: Int): Fu[Option[Game]] = coll.find(
-    Query.finished ++ Query.variantStandard ++ Query.turnsMoreThan(20) ++ Query.rated
+    Query.finished ++ Query.variantStandard ++ Query.turnsGt(20) ++ Query.rated
   ).sort(Query.sortCreated)
     .skip(Random nextInt distribution)
     .uno[Game]
@@ -287,7 +275,7 @@ object GameRepo {
     val userIds = g2.userIds.distinct
     val fen = initialFen.map(_.value) orElse {
       (!g2.variant.standardInitialPosition)
-        .option(Forsyth >> g2.toChess)
+        .option(Forsyth >> g2.chess)
         .filter(Forsyth.initial !=)
     }
     val checkInHours =
@@ -420,17 +408,7 @@ object GameRepo {
     $doc(s"${F.pgnImport}.h" -> PgnImport.hash(pgn))
   )
 
-  def getPgn(id: ID): Fu[PgnMoves] = getOptionPgn(id) map (~_)
-
-  def getNonEmptyPgn(id: ID): Fu[Option[PgnMoves]] =
-    getOptionPgn(id) map (_ filter (_.nonEmpty))
-
-  def getOptionPgn(id: ID): Fu[Option[PgnMoves]] =
-    coll.primitiveOne[BSONBinary]($id(id), F.binaryPgn) map {
-      _ map { bin =>
-        BinaryFormat.pgn read { ByteArray.ByteArrayBSONHandler read bin }
-      }
-    }
+  def getOptionPgn(id: ID): Fu[Option[PgnMoves]] = game(id) map2 { (g: Game) => g.pgnMoves }
 
   def lastGameBetween(u1: String, u2: String, since: DateTime): Fu[Option[Game]] =
     coll.uno[Game]($doc(
@@ -438,11 +416,12 @@ object GameRepo {
       F.createdAt $gt since
     ))
 
-  def lastGamesBetween(u1: String, u2: String, since: DateTime, nb: Int): Fu[List[Game]] =
-    coll.find($doc(
-      F.playerUids $all List(u1, u2),
-      F.createdAt $gt since
-    )).list[Game](nb, ReadPreference.secondaryPreferred)
+  def lastGamesBetween(u1: User, u2: User, since: DateTime, nb: Int): Fu[List[Game]] =
+    List(u1, u2).forall(_.count.game > 0) ??
+      coll.find($doc(
+        F.playerUids $all List(u1.id, u2.id),
+        F.createdAt $gt since
+      )).list[Game](nb, ReadPreference.secondaryPreferred)
 
   def getUserIds(id: ID): Fu[List[User.ID]] =
     coll.primitiveOne[List[User.ID]]($id(id), F.playerUids) map (~_)
@@ -452,7 +431,7 @@ object GameRepo {
       Query.finished
         ++ Query.rated
         ++ Query.user(userId)
-        ++ Query.turnsMoreThan(20)
+        ++ Query.turnsGt(20)
     ).sort(Query.sortCreated)
       .cursor[Game](ReadPreference.secondaryPreferred)
       .list(nb)

@@ -2,32 +2,32 @@ package lila.game
 
 import play.api.libs.json._
 
-import chess.format.Forsyth
+import chess.format.{ FEN, Forsyth }
 import chess.variant.Crazyhouse
 import chess.{ Color, Clock }
 
 object JsonView {
 
-  def gameJson(game: Game, initialFen: Option[String]) = Json.obj(
+  def gameJson(game: Game, initialFen: Option[FEN]) = Json.obj(
     "id" -> game.id,
     "variant" -> game.variant,
     "speed" -> game.speed.key,
     "perf" -> PerfPicker.key(game),
     "rated" -> game.rated,
-    "initialFen" -> (initialFen | chess.format.Forsyth.initial),
-    "fen" -> (Forsyth >> game.toChess),
+    "initialFen" -> initialFen.fold(chess.format.Forsyth.initial)(_.value),
+    "fen" -> (Forsyth >> game.chess),
     "player" -> game.turnColor,
     "turns" -> game.turns,
-    "startedAtTurn" -> game.startedAtTurn,
+    "startedAtTurn" -> game.chess.startedAtTurn,
     "source" -> game.source,
     "status" -> game.status,
     "createdAt" -> game.createdAt
-  ).add("threefold" -> game.toChessHistory.threefoldRepetition)
+  ).add("threefold" -> game.history.threefoldRepetition)
     .add("boosted" -> game.boosted)
     .add("tournamentId" -> game.tournamentId)
     .add("winner" -> game.winnerColor)
-    .add("lastMove" -> game.castleLastMoveTime.lastMoveString)
-    .add("check" -> game.check.map(_.key))
+    .add("lastMove" -> game.lastMoveKeys)
+    .add("check" -> game.situation.checkSquare.map(_.key))
     .add("rematch" -> game.next)
 
   implicit val statusWrites: OWrites[chess.Status] = OWrites { s =>

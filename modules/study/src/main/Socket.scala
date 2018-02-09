@@ -17,6 +17,7 @@ private final class Socket(
     studyId: Study.Id,
     jsonView: JsonView,
     studyRepo: StudyRepo,
+    chapterRepo: ChapterRepo,
     lightUser: lila.common.LightUser.Getter,
     val history: History[Socket.Messadata],
     uidTimeout: Duration,
@@ -222,6 +223,15 @@ private final class Socket(
       json foreach { notifyAll("crowd", _) }
 
     case Broadcast(t, msg) => notifyAll(t, msg)
+
+    case ServerEval.Progress(chapterId, tree, analysis, division) =>
+      import lila.game.JsonView.divisionWriter
+      notifyAll("analysisProgress", Json.obj(
+        "analysis" -> analysis,
+        "ch" -> chapterId,
+        "tree" -> tree,
+        "division" -> division
+      ))
 
     case GetNbMembers => sender ! NbMembers(members.size)
 

@@ -28,7 +28,7 @@
     @info.nbBlockers.map { nb =>
     <a class="intertab">@splitNumber(nb + " Blockers")</a>
     }
-    <a href="@routes.UserTournament.path(u.username, "recent")" class="intertab tournament_stats" data-toints="@u.toints">@splitNumber(u.toints + " " + trans.tournamentPoints())</a>
+    <a href="@routes.UserTournament.path(u.username, "recent")" class="intertab tournament_stats" data-toints="@u.toints">@splitNumber(trans.nbTournamentPoints.pluralSame(u.toints))</a>
     <a href="@routes.Study.byOwnerDefault(u.username)" class="intertab">@splitNumber(info.nbStudies + " studies")</a>
     <a class="intertab" @NotForKids {
       href="@routes.ForumPost.search("user:" + u.username, 1)"
@@ -84,7 +84,7 @@
   @notes.map { note =>
   <div>
     <p class="meta">@userIdLink(note.from.some)<br />@momentFromNow(note.date)</p>
-    <p class="text">@autoLink(note.text)</p>
+    <p class="text">@richText(note.text)</p>
   </div>
   }
 </div>
@@ -132,7 +132,7 @@ case _ => {
     <strong class="name">@name</strong>
     }
     @profile.nonEmptyBio.ifTrue(!u.troll || ctx.is(u)).map { bio =>
-    <p class="bio">@addUserProfileLinks(addLinks(shorten(bio, 400)))</p>
+    <p class="bio">@richText(shorten(bio, 400), nl2br=false)</p>
     }
     }
     <div class="stats">

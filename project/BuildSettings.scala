@@ -7,13 +7,14 @@ object BuildSettings {
 
   import Dependencies._
 
-  val globalScalaVersion = "2.11.11"
+  val globalScalaVersion = "2.11.12"
 
   def buildSettings = Defaults.coreDefaultSettings ++ Seq(
     organization := "org.lichess",
     scalaVersion := globalScalaVersion,
     resolvers ++= Dependencies.Resolvers.commons,
     scalacOptions ++= compilerOptions,
+    javacOptions += "-Xlint:unchecked",
     incOptions := incOptions.value.withNameHashing(true),
     updateOptions := updateOptions.value.withCachedResolution(true),
     sources in doc in Compile := List(),

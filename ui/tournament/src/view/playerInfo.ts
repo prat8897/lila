@@ -18,20 +18,20 @@ function result(win, stat): string {
 function playerTitle(player) {
   return h('h2', [
     h('span.rank', player.rank + '. '),
-    renderPlayer(player, true)
+    renderPlayer(player, true, false)
   ]);
 }
 
 function setup(vnode: VNode) {
-  const el = vnode.elm as HTMLElement;
-  window.lichess.powertip.manualUserIn(el);
-  window.lichess.powertip.manualGameIn(el);
+  const el = vnode.elm as HTMLElement, p = window.lichess.powertip;
+  p.manualUserIn(el);
+  p.manualGameIn(el);
 }
 
 export default function(ctrl: TournamentController): VNode {
   const data = ctrl.playerInfo.data;
   var noarg = ctrl.trans.noarg;
-  if (!data || data.player.id !== ctrl.playerInfo.id) return h('div.player', [
+  if (!data || data.player.id !== ctrl.playerInfo.id) return h('div.player.box', [
     h('div.stats', [
       playerTitle(ctrl.playerInfo.player),
       spinner()
@@ -55,13 +55,16 @@ export default function(ctrl: TournamentController): VNode {
     h('div.stats', [
       playerTitle(data.player),
       h('table', [
-        data.player.performance ? numberRow(noarg('performance'), data.player.performance, 'raw') : null,
-        numberRow(noarg('gamesPlayed'), nb.game),
-        ...(nb.game ? [
-          numberRow(noarg('winRate'), [nb.win, nb.game], 'percent'),
-          numberRow(noarg('berserkRate'), [nb.berserk, nb.game], 'percent'),
-          numberRow(noarg('averageOpponent'), avgOp, 'raw')
-        ] : [])
+        data.player.performance ? numberRow(
+          noarg('performance'),
+          data.player.performance + (nb.game < 3 ? '?' : ''),
+          'raw') : null,
+          numberRow(noarg('gamesPlayed'), nb.game),
+          ...(nb.game ? [
+            numberRow(noarg('winRate'), [nb.win, nb.game], 'percent'),
+            numberRow(noarg('berserkRate'), [nb.berserk, nb.game], 'percent'),
+            numberRow(noarg('averageOpponent'), avgOp, 'raw')
+          ] : [])
       ])
     ]),
     h('div.scroll-shadow-soft', [

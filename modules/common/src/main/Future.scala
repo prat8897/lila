@@ -47,6 +47,8 @@ object Future {
     }
   }
 
+  def exists[A](list: List[A])(pred: A => Fu[Boolean]): Fu[Boolean] = find(list)(pred).map(_.isDefined)
+
   def delay[A](duration: FiniteDuration)(run: => Fu[A])(implicit system: akka.actor.ActorSystem): Fu[A] =
     if (duration == 0.millis) run
     else akka.pattern.after(duration, system.scheduler)(run)
@@ -54,4 +56,11 @@ object Future {
   def makeItLast[A](duration: FiniteDuration)(run: => Fu[A])(implicit system: akka.actor.ActorSystem): Fu[A] =
     if (duration == 0.millis) run
     else run zip akka.pattern.after(duration, system.scheduler)(funit) dmap (_._1)
+
+  def retry[T](op: => Fu[T], delay: FiniteDuration, retries: Int, logger: lila.log.Logger)(implicit system: akka.actor.ActorSystem): Fu[T] =
+    op recoverWith {
+      case e if retries > 0 =>
+        logger.info(s"$retries retries - ${e.getMessage}")
+        akka.pattern.after(delay, system.scheduler)(retry(op, delay, retries - 1, logger))
+    }
 }

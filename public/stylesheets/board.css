@@ -87,7 +87,9 @@ piece {
   /* no less than 2 */
 }
 .cg-512 piece {
-  will-change: transform;
+  will-change: transform, opacity;
+  transform: opacity .1s;
+  transition-timing-function: linear;
 }
 .mini_board piece {
   z-index: initial;
@@ -332,22 +334,6 @@ div.lichess_overboard {
 }
 div.lichess_overboard.padded {
   padding: 15px;
-}
-#challenge_await .spinner {
-  width: 90px;
-  height: 90px;
-}
-#ping_challenge .spinner {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 20px;
-}
-#lichess_id_input {
-  margin-top: 10px;
-  width: 80%;
-  text-align: center;
-  font-size: 1.2em;
-  padding: 1em 0;
 }
 #promotion_choice {
   position: absolute;
@@ -608,20 +594,19 @@ div.table_wrap .clock_top .bar {
 div.table_wrap .clock_bottom .bar {
   top: -4px;
 }
-div.table_wrap .clock .bar span {
+div.table_wrap .clock .bar {
   display: block;
   height: 4px;
-  width: 0;
   background: #759900;
+  transform-origin: left;
 }
-div.table_wrap .clock .bar.berserk span {
+div.table_wrap .clock .bar.berserk {
   background: #dc322f;
 }
 div.table_wrap.with_expiration .clock .bar {
   display: none;
 }
 div.table_wrap .clock > .time {
-  display: inline-block;
   border: 1px solid #ccc;
   padding: 0 8px;
   font-size: 38px;
@@ -642,7 +627,13 @@ div.table_wrap .clock huns {
   font-size: 80%;
 }
 div.table_wrap .clock sep {
-  opacity: 0.6;
+  opacity: 0.5;
+  font-size: 0.8em;
+  vertical-align: 4px;
+  margin-left: -1px;
+}
+div.table_wrap .clock tenths sep {
+  vertical-align: baseline;
 }
 div.table_wrap .clock sep.low {
   opacity: 0.15;
@@ -854,6 +845,19 @@ div.control .button.disabled {
   justify-content: center;
   align-items: center;
   text-transform: uppercase;
+  transition: height 0.5s ease;
+}
+.lichess_ground .rematch.button span {
+  transition: opacity 0.5s ease;
+}
+.lichess_ground .rematch.disabled {
+  height: 0;
+  overflow: hidden;
+  transition: height 0.5s ease;
+}
+.lichess_ground .rematch.disabled span {
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 .variant_crazyhouse .lichess_ground .rematch.button {
   height: 60px;
@@ -923,6 +927,7 @@ div.cemetery {
   white-space: nowrap;
   line-height: 0;
   height: 32px;
+  max-height: 32px; /* or else firefox bumps to 35px when adding <score> */
 }
 div.cemetery:first-child {
   margin-bottom: 5px;
@@ -965,7 +970,8 @@ div.under_chat .watchers {
   margin-top: 10px;
   opacity: 0.65;
   transition: 0.13s;
-  height: 9em;
+  min-height: 5em;
+  max-height: 9em;
   overflow: hidden;
 }
 div.under_chat .watchers.hidden {
@@ -1119,35 +1125,38 @@ body.playing.zen .table .moves,
 body.playing.zen .table .username,
 body.playing.zen rating,
 body.playing.zen .tournament_rank,
-body.playing.zen #friend_box {
-  display: none!important;
-}
+body.playing.zen #friend_box,
 body.playing.zen .board_left .side,
 body.playing.zen #chat,
 body.playing.zen .underboard,
-body.playing.zen .other_games,
-body.playing.zen .table .replay .buttons,
+body.playing.zen #now_playing,
 body.playing.zen .clock .moretime,
-body.playing.zen #top > * {
-  opacity: 0;
-  transition: 1s;
+body.playing.zen #top > *,
+body.playing.zen #site_title,
+#zentog {
+  display: none;
 }
-body.playing.zen.offline #reconnecting,
-body.playing.zen .board_left:hover .side,
-body.playing.zen .board_left:hover #chat,
-body.playing.zen .board_left:hover #site_title,
-body.playing.zen .table:hover .replay .buttons,
-body.playing.zen .clock:hover .moretime,
-body.playing.zen .underboard:hover,
-body.playing.zen .other_games:hover,
-body.playing.zen #top:hover > *,
-body.playing.zen .dasher {
+body.playing.zen .table_wrap .replay .buttons,
+body.playing.zen.offline #reconnecting {
+  opacity: 0!important;
+}
+body.playing.zen .table_wrap:hover .replay .buttons,
+body.playing.zen.offline #reconnecting {
   opacity: 1!important;
 }
-@media (hover) {
-  body.playing.zen #site_title,
-  body.playing.zen .dasher:not(.shown):not(:hover) {
-    opacity: 0!important;
-    transition: 1s;
-  }
+#zentog {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 10px 15px;
+  opacity: 0.5;
+}
+body.playing.zen #zentog {
+  display: block;
+}
+#zentog::before {
+  font-size: 1.3em;
+}
+#zentog:hover {
+  opacity: 1;
 }

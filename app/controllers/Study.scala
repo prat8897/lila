@@ -107,7 +107,8 @@ object Study extends LilaController {
             html = for {
               chat <- chatOf(sc.study)
               sVersion <- env.version(sc.study.id)
-            } yield Ok(html.study.show(sc.study, data, chat, sVersion)),
+              streams <- streamsOf(sc.study)
+            } yield Ok(html.study.show(sc.study, data, chat, sVersion, streams)),
             api = _ => Ok(Json.obj(
               "study" -> data.study,
               "analysis" -> data.analysis
@@ -123,17 +124,21 @@ object Study extends LilaController {
     chapter = resetToChapter | sc.chapter
     _ <- Env.user.lightUserApi preloadMany study.members.ids.toList
     _ = if (HTTPRequest isSynchronousHttp ctx.req) Env.study.studyRepo.incViews(study)
-    initialFen = chapter.root.fen.value.some
-    pov = UserAnalysis.makePov(initialFen, chapter.setup.variant)
-    baseData = Env.round.jsonView.userAnalysisJson(pov, ctx.pref, initialFen, chapter.setup.orientation, owner = false, me = ctx.me)
+    pov = UserAnalysis.makePov(chapter.root.fen.some, chapter.setup.variant)
+    analysis <- chapter.serverEval.exists(_.done) ?? Env.analyse.analyser.get(chapter.id.value)
+    division = analysis.isDefined option env.serverEvalMerger.divisionOf(chapter)
+    baseData = Env.round.jsonView.userAnalysisJson(pov, ctx.pref, chapter.root.fen.some, chapter.setup.orientation,
+      owner = false,
+      me = ctx.me,
+      division = division)
     studyJson <- Env.study.jsonView(study, chapters, chapter, ctx.me)
   } yield WithChapter(study, chapter) -> JsData(
     study = studyJson,
-    analysis = baseData ++ Json.obj(
+    analysis = baseData.add(
       "treeParts" -> partitionTreeJsonWriter.writes {
         lila.study.TreeBuilder(chapter.root, chapter.setup.variant)
-      }
-    )
+      }.some
+    ).add("analysis" -> analysis.map { lila.study.ServerEval.toJson(chapter, _) })
   )
 
   def show(id: String) = Open { implicit ctx =>
@@ -223,7 +228,7 @@ object Study extends LilaController {
             members = lila.study.StudyMembers(Map.empty) // don't need no members
           ), List(chapter.metadata), chapter, ctx.me) flatMap { studyJson =>
             val setup = chapter.setup
-            val initialFen = chapter.root.fen.value.some
+            val initialFen = chapter.root.fen.some
             val pov = UserAnalysis.makePov(initialFen, setup.variant)
             val baseData = Env.round.jsonView.userAnalysisJson(pov, ctx.pref, initialFen, setup.orientation, owner = false, me = ctx.me)
             val analysis = baseData ++ Json.obj(
@@ -339,4 +344,14 @@ object Study extends LilaController {
 
   private implicit def makeStudyId(id: String): StudyModel.Id = StudyModel.Id(id)
   private implicit def makeChapterId(id: String): Chapter.Id = Chapter.Id(id)
+
+  private[controllers] def streamsOf(study: StudyModel)(implicit ctx: Context): Fu[List[lila.streamer.Stream]] =
+    Env.streamer.liveStreamApi.all.flatMap {
+      _.streams.filter { s =>
+        study.members.members.exists(m => s is m._2.id)
+      }.map { stream =>
+        (fuccess(ctx.me ?? stream.streamer.is) >>|
+          env.isConnected(study.id, stream.streamer.userId)) map { _ option stream }
+      }.sequenceFu.map(_.flatten)
+    }
 }

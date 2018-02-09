@@ -62,6 +62,11 @@ object HTTPRequest {
   def hasFileExtension(req: RequestHeader) =
     fileExtensionPattern.matcher(req.path).matches
 
-  def print(req: RequestHeader) =
-    s"${req.method} ${req.domain}${req.uri} ${lastRemoteAddress(req)} origin:${~origin(req)} referer:${~referer(req)} ua:${~userAgent(req)}"
+  def weirdUA(req: RequestHeader) = userAgent(req).fold(true)(_.size < 30)
+
+  def print(req: RequestHeader) = s"${printReq(req)} ${printClient(req)}"
+
+  def printReq(req: RequestHeader) = s"${req.method} ${req.domain}${req.uri}"
+
+  def printClient(req: RequestHeader) = s"${lastRemoteAddress(req)} origin:${~origin(req)} referer:${~referer(req)} ua:${~userAgent(req)}"
 }

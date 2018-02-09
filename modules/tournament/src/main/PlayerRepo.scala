@@ -69,9 +69,7 @@ object PlayerRepo {
 
   def playerInfo(tourId: String, userId: String): Fu[Option[PlayerInfo]] = find(tourId, userId) flatMap {
     _ ?? { player =>
-      coll.countSel(selectTour(tourId) ++ $doc(
-        "m" -> $doc("$gt" -> player.magicScore)
-      )) map { n =>
+      coll.countSel(selectTour(tourId) ++ $doc("m" $gt player.magicScore)) map { n =>
         PlayerInfo((n + 1), player.withdraw).some
       }
     }
@@ -79,15 +77,13 @@ object PlayerRepo {
 
   def join(tourId: String, user: User, perfLens: Perfs => Perf) =
     find(tourId, user.id) flatMap {
-      case Some(p) if p.withdraw => coll.update(selectId(p._id), $doc("$unset" -> $doc("w" -> true)))
+      case Some(p) if p.withdraw => coll.update(selectId(p._id), $unset("w"))
       case Some(p) => funit
       case None => coll.insert(Player.make(tourId, user, perfLens))
     } void
 
-  def withdraw(tourId: String, userId: String) = coll.update(
-    selectTourUser(tourId, userId),
-    $doc("$set" -> $doc("w" -> true))
-  ).void
+  def withdraw(tourId: String, userId: String) =
+    coll.update(selectTourUser(tourId, userId), $set("w" -> true)).void
 
   private[tournament] def withPoints(tourId: String): Fu[List[Player]] =
     coll.find(
@@ -163,4 +159,12 @@ object PlayerRepo {
       .logIfSlow(200, logger) { players =>
         s"PlayerRepo.rankedByTourAndUserIds $tourId ${userIds.size} user IDs, ${ranking.size} ranking, ${players.size} players"
       }.result
+
+  def searchPlayers(tourId: Tournament.ID, term: String, nb: Int): Fu[List[User.ID]] =
+    term.nonEmpty ?? coll.primitive[User.ID](
+      selector = $doc("tid" -> tourId, "uid".$regex("^" + term.toLowerCase + ".*$", "")),
+      sort = $sort desc "m",
+      nb = nb,
+      field = "uid"
+    )
 }

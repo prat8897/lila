@@ -15,21 +15,28 @@ final class Env(
     reportApi: lila.report.ReportApi,
     notifyApi: lila.notify.NotifyApi,
     userCache: lila.user.Cached,
+    settingStore: lila.memo.SettingStore.Builder,
     db: lila.db.Env
 ) {
 
   private val reportColl = db(config getString "collection.report")
-  private val requestColl = db(config getString "collection.request")
 
-  val api = new IrwinApi(
-    reportColl = reportColl,
-    requestColl = requestColl,
-    modApi = modApi,
-    reportApi = reportApi,
-    notifyApi = notifyApi
+  lazy val irwinModeSetting = settingStore[String](
+    "irwinMode",
+    default = "none",
+    text = "Allow Irwin to: [mark|report|none]".some
   )
 
-  lazy val stream = new IrwinStream(system)
+  val stream = new IrwinStream(system)
+
+  lazy val api = new IrwinApi(
+    reportColl = reportColl,
+    modApi = modApi,
+    reportApi = reportApi,
+    notifyApi = notifyApi,
+    bus = system.lilaBus,
+    mode = irwinModeSetting.get
+  )
 
   scheduler.future(5 minutes, "irwin tournament leaders") {
     tournamentApi.allCurrentLeadersInStandard flatMap api.requests.fromTournamentLeaders
@@ -37,14 +44,6 @@ final class Env(
   scheduler.future(15 minutes, "irwin leaderboards") {
     userCache.getTop50Online flatMap api.requests.fromLeaderboard
   }
-
-  system.lilaBus.subscribe(system.actorOf(Props(new Actor {
-    import lila.hub.actorApi.report._
-    def receive = {
-      case Created(userId, "cheat" | "cheatprint", reporterId) => api.requests.insert(userId, _.Report, none)
-      case Processed(userId, "cheat" | "cheatprint") => api.requests.drop(userId)
-    }
-  })), 'report)
 }
 
 object Env {
@@ -57,6 +56,7 @@ object Env {
     reportApi = lila.report.Env.current.api,
     notifyApi = lila.notify.Env.current.api,
     userCache = lila.user.Env.current.cached,
+    settingStore = lila.memo.Env.current.settingStore,
     scheduler = lila.common.PlayApp.scheduler,
     system = lila.common.PlayApp.system
   )

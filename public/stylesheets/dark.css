@@ -61,8 +61,8 @@ body.dark .undertable td,
 body.dark .study_invite input,
 body.dark div.side_box,
 body.dark div.side_box .top,
-body.dark div.box,
-body.dark div.box .top,
+body.dark .box,
+body.dark .box .top,
 body.dark div.table,
 body.dark div.table_wrap > div.clock > div.time,
 body.dark #tournament_schedule .schedule,
@@ -241,7 +241,7 @@ body.dark .areplay,
 body.dark .explorer_box tr:nth-child(even),
 body.dark div.mchat .messages,
 body.dark div.side_box,
-body.dark div.box,
+body.dark .box,
 body.dark div.table,
 body.dark div.table_wrap > div.clock > div.time,
 body.dark #friend_box .content a:hover,
@@ -453,7 +453,8 @@ body.dark div.user_show div.user-infos.scroll-shadow-hard {
 body.dark div.game_row:hover,
 body.dark .studies .study:hover,
 body.dark .relays .relay:hover,
-body.dark .coaches .coach:hover {
+body.dark .coaches .coach:hover,
+body.dark .streamers .streamer:hover {
   background: rgba(27, 51, 68, 0.5)!important;
 }
 body.dark .color-icon.white::before {
@@ -523,6 +524,9 @@ body.dark input.cmn-toggle-round + label:after {
 }
 body.dark signal > i.off {
   background-color: #555;
+}
+body.dark .context-streamer {
+  color: #ccc!important;
 }
 body.dark .ddloader {
   background-image: url(../images/loader/whitex1.png);

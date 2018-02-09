@@ -13,6 +13,7 @@ final class Env(
     appPath: String,
     isProd: Boolean,
     asyncCache: lila.memo.AsyncCache.Builder,
+    settingStore: lila.memo.SettingStore.Builder,
     scheduler: lila.common.Scheduler
 ) {
 
@@ -30,6 +31,12 @@ final class Env(
   }
   import settings._
 
+  lazy val pgnEncodingSetting = settingStore[String](
+    "pgnEncodingSetting",
+    default = "none",
+    text = "Use Huffman encoding for game PGN [none|beta|all]".some
+  )
+
   lazy val gameColl = db(CollectionGame)
 
   lazy val pngExport = new PngExport(PngUrl, PngSize)
@@ -45,7 +52,7 @@ final class Env(
   lazy val paginator = new PaginatorBuilder(
     coll = gameColl,
     cached = cached,
-    maxPerPage = PaginatorMaxPerPage
+    maxPerPage = lila.common.MaxPerPage(PaginatorMaxPerPage)
   )
 
   lazy val rewind = Rewind
@@ -106,6 +113,7 @@ object Env {
     appPath = play.api.Play.current.path.getCanonicalPath,
     isProd = lila.common.PlayApp.isProd,
     asyncCache = lila.memo.Env.current.asyncCache,
+    settingStore = lila.memo.Env.current.settingStore,
     scheduler = lila.common.PlayApp.scheduler
   )
 }

@@ -136,6 +136,9 @@ private[controllers] trait LilaController
   protected def NoLame[A <: Result](a: => Fu[A])(implicit ctx: Context): Fu[Result] =
     NoEngine(NoBooster(a))
 
+  protected def NoShadowban[A <: Result](a: => Fu[A])(implicit ctx: Context): Fu[Result] =
+    ctx.me.??(_.troll).fold(notFound, a)
+
   protected def NoPlayban(a: => Fu[Result])(implicit ctx: Context): Fu[Result] =
     ctx.userId.??(Env.playban.api.currentBan) flatMap {
       _.fold(a) { ban =>
@@ -313,7 +316,7 @@ private[controllers] trait LilaController
       }
     }
 
-  private def getAssetVersion = Env.api.assetVersion.get
+  protected def getAssetVersion = lila.common.AssetVersion(Env.api.assetVersionSetting.get())
 
   private def blindMode(implicit ctx: UserContext) =
     ctx.req.cookies.get(Env.api.Accessibility.blindCookieName) ?? { c =>
@@ -325,7 +328,7 @@ private[controllers] trait LilaController
   private def restoreUser(req: RequestHeader): Fu[RestoredUser] =
     Env.security.api restoreUser req addEffect {
       _ ifTrue (HTTPRequest isSynchronousHttp req) foreach { d =>
-        Env.current.bus.publish(lila.user.User.Active(d.user), 'userActive)
+        Env.current.system.lilaBus.publish(lila.user.User.Active(d.user), 'userActive)
       }
     } flatMap {
       case None => fuccess(None -> None)

@@ -27,7 +27,7 @@ private[round] final class Round(
     socketHub: ActorRef,
     /* Send a message to self,
      * but by going through the actor map,
-     * so this actor is spaned again if it had died/expired */
+     * so this actor is spawned again if it had died/expired */
     awakeWith: Any => Unit,
     moretimeDuration: FiniteDuration,
     activeTtl: Duration
@@ -138,12 +138,12 @@ private[round] final class Round(
     case DrawYes(playerRef) => handle(playerRef)(drawer.yes)
     case DrawNo(playerRef) => handle(playerRef)(drawer.no)
     case DrawClaim(playerId) => handle(playerId)(drawer.claim)
-    case DrawForce => handle(drawer force _)
     case Cheat(color) => handle { game =>
       (game.playable && !game.imported) ?? {
         finisher.other(game, _.Cheat, Some(!color))
       }
     }
+    case TooManyPlies => handle(drawer force _)
 
     case Threefold => proxy withGame { game =>
       drawer autoThreefold game map {

@@ -187,7 +187,7 @@ function buttons(ctrl: AnalyseCtrl) {
     ctrl.embed ? null : h('div.features', ctrl.studyPractice ? [
       h('a.hint--bottom', {
         attrs: {
-          'data-hint': ctrl.trans.noarg('analysisBoard'),
+          'data-hint': ctrl.trans.noarg('analysis'),
           target: '_blank',
           href: ctrl.studyPractice.analysisUrl()
         }
@@ -205,7 +205,7 @@ function buttons(ctrl: AnalyseCtrl) {
       }, [iconTag(']')]),
       ctrl.ceval.possible && ctrl.ceval.allowed() && !ctrl.isGamebook() ? h('button.hint--bottom', {
         attrs: {
-          'data-hint': 'Practice with computer',
+          'data-hint': ctrl.trans.noarg('practiceWithComputer'),
           'data-act': 'practice'
         },
         class: {
@@ -323,7 +323,7 @@ export default function(ctrl: AnalyseCtrl): VNode {
       h('div.right', [acplView(ctrl)])
     ]),
     ctrl.embed || synthetic(ctrl.data) ? null : h('div.analeft', [
-      ctrl.forecast ? forecastView(ctrl) : null,
+      ctrl.forecast ? forecastView(ctrl, ctrl.forecast) : null,
       game.playable(ctrl.data) ? h('div.back_to_game',
         h('a.button.text', {
           attrs: {

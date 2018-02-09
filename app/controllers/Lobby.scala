@@ -21,7 +21,10 @@ object Lobby extends LilaController {
   def home = Open { implicit ctx =>
     negotiate(
       html = renderHome(Results.Ok).map(NoCache),
-      api = _ => fuccess(Ok(lobbyJson))
+      api = _ => fuccess {
+        val expiration = 60 * 60 * 24 * 7 // set to one hour, one week before changing the pool config
+        Ok(lobbyJson).withHeaders(CACHE_CONTROL -> s"max-age=$expiration")
+      }
     )
   }
 
@@ -35,7 +38,7 @@ object Lobby extends LilaController {
       tours = Env.tournament.cached.promotable.get.nevermind,
       events = Env.event.api.promoteTo(ctx.req).nevermind,
       simuls = Env.simul.allCreatedFeaturable.get.nevermind
-    ) dmap (html.lobby.home.apply _).tupled dmap { html =>
+    ) map (html.lobby.home.apply _).tupled dmap { html =>
       ensureSessionId(ctx.req)(status(html))
     }
   }.mon(_.http.response.home)

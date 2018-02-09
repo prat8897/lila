@@ -56,6 +56,9 @@
   <string name="showThreat">狙いを表示</string>
   <string name="inLocalBrowser">ローカル ブラウザ内で</string>
   <string name="toggleLocalEvaluation">ローカル評価値のオン/オフ</string>
+  <string name="promoteVariation">変化を主手順にする</string>
+  <string name="makeMainLine">主手順にする</string>
+  <string name="deleteFromHere">ここから削除</string>
   <string name="move">手</string>
   <string name="variantLoss">バリアント負け</string>
   <string name="variantWin">バリアント勝ち</string>
@@ -101,8 +104,11 @@
   <string name="memory">メモリ</string>
   <string name="infiniteAnalysis">無限解析</string>
   <string name="removesTheDepthLimit">探索手数の制限をなくし最大限の解析を行なう</string>
+  <string name="blunder">大悪手</string>
   <string name="blunders">大悪手</string>
+  <string name="mistake">悪手</string>
   <string name="mistakes">悪手</string>
+  <string name="inaccuracy">疑問手</string>
   <string name="inaccuracies">疑問手</string>
   <string name="moveTimes">消費時間</string>
   <string name="flipBoard">盤を反転させる</string>
@@ -164,7 +170,7 @@
   <plurals name="nbPuzzles">
     <item quantity="other">%s タクティクス</item>
   </plurals>
-  <string name="gamesPlayed">局をプレイ</string>
+  <string name="gamesPlayed">対局数</string>
   <plurals name="nbGamesWithYou">
     <item quantity="other">あなたと %s 局対局</item>
   </plurals>
@@ -182,6 +188,7 @@
   <string name="accept">承諾</string>
   <string name="decline">拒否</string>
   <string name="playingRightNow">対局中</string>
+  <string name="eventInProgress">対局中</string>
   <string name="finished">終了したトーナメント</string>
   <string name="abortGame">対局を中止する</string>
   <string name="gameAborted">対局を中止しました</string>
@@ -190,6 +197,8 @@
   <string name="mode">モード</string>
   <string name="casual">非レート戦</string>
   <string name="rated">レート戦</string>
+  <string name="casualTournament">非レート戦</string>
+  <string name="ratedTournament">レート戦</string>
   <string name="thisGameIsRated">この対局はレート戦です</string>
   <string name="rematch">再対局</string>
   <string name="rematchOfferSent">再対局の申し込みを送信しました</string>
@@ -249,6 +258,9 @@
   <string name="tournament">トーナメント</string>
   <string name="tournaments">トーナメント</string>
   <string name="tournamentPoints">トーナメントポイント</string>
+  <plurals name="nbTournamentPoints">
+    <item quantity="other">%s トーナメントポイント</item>
+  </plurals>
   <string name="viewTournament">トーナメントを見る</string>
   <string name="backToTournament">トーナメントに戻る</string>
   <string name="thematic">局面指定</string>
@@ -297,7 +309,7 @@
   <string name="reset">リセット</string>
   <string name="apply">適用</string>
   <string name="leaderboard">スコアボード</string>
-  <string name="pasteTheFenStringHere">ここにFEN形式の棋譜をペースト</string>
+  <string name="pasteTheFenStringHere">ここにFEN形式の局面をペースト</string>
   <string name="pasteThePgnStringHere">ここにPGN形式の棋譜をペースト</string>
   <string name="fromPosition">特定の局面から</string>
   <string name="continueFromHere">中断した所から再開</string>
@@ -408,7 +420,7 @@
   <string name="puzzleOfTheDay">今日の問題</string>
   <string name="clickToSolve">問題を解く</string>
   <string name="goodMove">次善手</string>
-  <string name="butYouCanDoBetter">より良い手があります。</string>
+  <string name="butYouCanDoBetter">もっといい手があります。</string>
   <string name="bestMove">最善手！</string>
   <string name="keepGoing">続ける</string>
   <string name="puzzleFailed">不正解</string>
@@ -727,5 +739,61 @@
   <string name="notifications">通知</string>
   <string name="challenges">チャレンジ</string>
   <string name="perfRatingX">レーティング: %s</string>
-  <string name="xSecondsToPlayTheFirstMove">あと %s 秒以内に初手を指してください</string>
+  <plurals name="nbSecondsToPlayTheFirstMove">
+    <item quantity="other">あと %s 秒以内に初手を指してください</item>
+  </plurals>
+  <string name="practiceWithComputer">コンピューターと練習する</string>
+  <string name="anotherWasX">別の手は %s</string>
+  <string name="bestWasX">最善手は %s</string>
+  <string name="youBrowsedAway">ページを離れました</string>
+  <string name="resumePractice">練習を続ける</string>
+  <string name="theGameIsADraw">ドロー（引き分け）です。</string>
+  <string name="computerThinking">コンピューター思考中…</string>
+  <string name="seeBestMove">最善手を見る</string>
+  <string name="hideBestMove">最善手をかくす</string>
+  <string name="getAHint">ヒントを見る</string>
+  <string name="evaluatingYourMove">あなたの手を評価中…</string>
+  <string name="whiteWinsGame">白勝ち</string>
+  <string name="blackWinsGame">黒勝ち</string>
+  <string name="learnFromYourMistakes">自分の悪手に学ぼう</string>
+  <string name="learnFromThisMistake">この悪手に学ぶ</string>
+  <string name="skipThisMove">この手を飛ばす</string>
+  <string name="next">次</string>
+  <string name="xWasPlayed">指されたのは %s</string>
+  <string name="findBetterMoveForWhite">白のもっといい手を見つけてください</string>
+  <string name="findBetterMoveForBlack">黒のもっといい手を見つけてください</string>
+  <string name="resumeLearning">学習を続ける</string>
+  <string name="youCanDoBetter">もっといい手があります</string>
+  <string name="tryAnotherMoveForWhite">白の別の手を考えてください</string>
+  <string name="tryAnotherMoveForBlack">黒の別の手を考えてください</string>
+  <string name="solution">答え</string>
+  <string name="waitingForAnalysis">解析を待っています</string>
+  <string name="noMistakesFoundForWhite">白に悪手はありませんでした</string>
+  <string name="noMistakesFoundForBlack">黒に悪手はありませんでした</string>
+  <string name="doneReviewingWhiteMistakes">白の悪手チェックが終了</string>
+  <string name="doneReviewingBlackMistakes">黒の悪手チェックが終了</string>
+  <string name="doItAgain">もう一度どうぞ</string>
+  <string name="reviewWhiteMistakes">白の悪手をチェックする</string>
+  <string name="reviewBlackMistakes">黒の悪手をチェックする</string>
+  <string name="advantage">優位</string>
+  <plurals name="nbSeconds">
+    <item quantity="other">%s 秒</item>
+  </plurals>
+  <string name="opening">序盤</string>
+  <string name="middlegame">中盤</string>
+  <string name="endgame">終盤</string>
+  <string name="registerToSendChallenges">チャレンジを送るには登録が必要です。</string>
+  <string name="youCannotChallengeX">%s にチャレンジできません。</string>
+  <string name="xDoesNotAcceptChallenges">%s はチャレンジを受け付けていません。</string>
+  <string name="yourXRatingIsTooFarFromY">%1$s レーティングが %2$s と離れすぎです。</string>
+  <string name="cannotChallengeDueToProvisionalXRating">%s が仮レーティングのためチャレンジできません。</string>
+  <string name="xOnlyAcceptsChallengesFromFriends">%s は友達からのチャレンジしか受け付けません。</string>
+  <string name="conditionalPremoves">コンディショナルムーブ</string>
+  <string name="addCurrentVariation">現在の変化を追加する</string>
+  <string name="playVariationToCreateConditionalPremoves">駒を動かしてコンディショナルムーブを設定します</string>
+  <string name="noConditionalPremoves">コンディショナルムーブなし</string>
+  <string name="playX">指し手は %s</string>
+  <plurals name="andSaveNbPremoveLines">
+    <item quantity="other">%s 種のコンディショナルムーブを設定</item>
+  </plurals>
 </resources>

@@ -192,7 +192,7 @@ export function submitMove(ctrl: RoundController): VNode | undefined {
     h('a.accept', {
       attrs: {
         'data-icon': 'E',
-        title: 'Submit move'
+        title: ctrl.trans.noarg('accept')
       },
       hook: util.bind('click', () => ctrl.submitMove(true))
     }),
@@ -248,7 +248,12 @@ export function followUp(ctrl: RoundController): VNode {
       d.game.source === 'pool'),
   rematchZone = ctrl.challengeRematched ? [
     h('div.suggestion.text', util.justIcon('j'), ctrl.trans.noarg('rematchOfferSent')
-  )] : (rematchable || d.game.rematch ? rematchButtons(ctrl) : []);
+  )] : (rematchable || d.game.rematch ? rematchButtons(ctrl) : [
+    h('a.button.rematch.white',
+      { class: { disabled: true } },
+      [h('span', ctrl.trans.noarg('rematch'))]
+    )
+  ]);
   return h('div.follow_up', [
     ...rematchZone,
     d.tournament ? h('a.button', {

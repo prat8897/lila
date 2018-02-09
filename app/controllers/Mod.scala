@@ -4,7 +4,7 @@ import lila.api.Context
 import lila.app._
 import lila.chat.Chat
 import lila.common.{ IpAddress, EmailAddress }
-import lila.report.{ Suspect, Mod => AsMod }
+import lila.report.{ Suspect, Mod => AsMod, SuspectId }
 import lila.user.{ UserRepo, User => UserModel }
 import views._
 
@@ -81,7 +81,9 @@ object Mod extends LilaController {
 
   def closeAccount(username: String) = Secure(_.CloseAccount) { implicit ctx => me =>
     modApi.closeAccount(me.id, username) flatMap {
-      _ ?? Account.doClose
+      _ ?? { user =>
+        Env.current.closeAccount(user.id)
+      }
     } inject redirect(username)
   }
 
@@ -89,13 +91,15 @@ object Mod extends LilaController {
     modApi.reopenAccount(me.id, username) inject redirect(username)
   }
 
-  def kickFromRankings(username: String) = Secure(_.RemoveRanking) { implicit ctx => me =>
-    modApi.kickFromRankings(me.id, username) inject redirect(username)
-  }
-
   def reportban(username: String, v: Boolean) = Secure(_.ReportBan) { implicit ctx => me =>
     withSuspect(username) { sus =>
       modApi.setReportban(AsMod(me), sus, v) inject redirect(username)
+    }
+  }
+
+  def rankban(username: String, v: Boolean) = Secure(_.RemoveRanking) { implicit ctx => me =>
+    withSuspect(username) { sus =>
+      modApi.setRankban(AsMod(me), sus, v) inject redirect(username)
     }
   }
 
@@ -115,7 +119,8 @@ object Mod extends LilaController {
     implicit def req = ctx.body
     lila.user.DataForm.title.bindFromRequest.fold(
       err => fuccess(redirect(username, mod = true)),
-      title => modApi.setTitle(me.id, username, title) >>-
+      title => modApi.setTitle(me.id, username, title) >>
+        Env.security.automaticEmail.onTitleSet(username) >>-
         Env.user.uncacheLightUser(UserModel normalize username) inject
         redirect(username, mod = false)
     )
@@ -164,7 +169,7 @@ object Mod extends LilaController {
           Env.report.api.inquiries.ofModId(me.id) map {
             case chats ~ threads ~ publicLines ~ spy ~ notes ~ history ~ inquiry =>
               if (priv && !inquiry.??(_.isRecentCommOf(Suspect(user))))
-                Env.slack.api.commlog(mod = me, user = user, inquiry.map(_.createdBy))
+                Env.slack.api.commlog(mod = me, user = user, inquiry.map(_.oldestAtom.by.value))
               val povWithChats = (povs zip chats) collect {
                 case (p, Some(c)) if c.nonEmpty => p -> c
               } take 15
@@ -189,7 +194,7 @@ object Mod extends LilaController {
 
   def refreshUserAssess(username: String) = Secure(_.MarkEngine) { implicit ctx => me =>
     assessApi.refreshAssessByUsername(username) >>
-      Env.irwin.api.requests.fromMod(lila.user.User normalize username, me) inject
+      Env.irwin.api.requests.fromMod(SuspectId normalize username, me) inject
       redirect(username)
   }
 
@@ -244,8 +249,10 @@ object Mod extends LilaController {
       )).bindFromRequest.fold(
         err => BadRequest(html.mod.permissions(user)).fuccess,
         permissions =>
-          modApi.setPermissions(me.id, user.username, Permission(permissions)) inject
-            redirect(user.username, true)
+          modApi.setPermissions(me.id, user.username, Permission(permissions)) >> {
+            (Permission(permissions) diff Permission(user.roles) contains Permission.Coach) ??
+              Env.security.automaticEmail.onBecomeCoach(user)
+          } inject redirect(user.username, true)
       )
     }
   }

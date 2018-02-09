@@ -20,45 +20,6 @@ lichess.topMenuIntent = function() {
     var id = split.length == 1 ? split[0] : split[1];
     return u ? '<a class="user_link ulpt ' + (klass || '') + '" href="/@/' + id + '">' + (limit ? u.substring(0, limit) : u) + '</a>' : 'Anonymous';
   };
-  $.redirect = function(obj) {
-    var url;
-    if (typeof obj == "string") url = obj;
-    else {
-      url = obj.url;
-      if (obj.cookie) {
-        var domain = document.domain.replace(/^.+(\.[^\.]+\.[^\.]+)$/, '$1');
-        var cookie = [
-          encodeURIComponent(obj.cookie.name) + '=' + obj.cookie.value,
-          '; max-age=' + obj.cookie.maxAge,
-          '; path=/',
-          '; domain=' + domain
-        ].join('');
-        document.cookie = cookie;
-      }
-    }
-    var href = '//' + location.hostname + '/' + url.replace(/^\//, '');
-    lichess.redirectInProgress = href;
-    location.href = href;
-  };
-  lichess.fp = {};
-  lichess.fp.contains = function(list, needle) {
-    return list.indexOf(needle) !== -1;
-  };
-  lichess.fp.debounce = function(func, wait, immediate) {
-    var timeout;
-    return function() {
-      var context = this,
-        args = arguments;
-      var later = function() {
-        timeout = null;
-        if (!immediate) func.apply(context, args);
-      };
-      var callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-      if (callNow) func.apply(context, args);
-    };
-  };
 
   lichess.socket = null;
   $.extend(true, lichess.StrongSocket.defaults, {
@@ -91,7 +52,7 @@ lichess.topMenuIntent = function() {
       redirect: function(o) {
         setTimeout(function() {
           lichess.hasToReload = true;
-          $.redirect(o);
+          lichess.redirect(o);
         }, 200);
       },
       deployPost: function(html) {
@@ -144,7 +105,7 @@ lichess.topMenuIntent = function() {
     lichess.loadCss('/assets/stylesheets/autocomplete.css');
     return lichess.loadScript('/assets/javascripts/vendor/typeahead.jquery.min.js', {noVersion:true}).done(function() {
       $input.typeahead(null, {
-        minLength: 3,
+        minLength: opts.minLength || 3,
         hint: true,
         highlight: false,
         source: function(query, _, runAsync) {
@@ -154,6 +115,7 @@ lichess.topMenuIntent = function() {
             data: {
               term: query,
               friend: opts.friend ? 1 : 0,
+              tour: opts.tour,
               object: 1
             },
             success: function(res) {
@@ -400,7 +362,8 @@ lichess.topMenuIntent = function() {
 
       var setZoom = function(zoom) {
 
-        currentZoom = zoom;
+        var boardPx = Math.round(zoom * 64) * 8;
+        currentZoom = zoom = boardPx / 512;
 
         var $lichessGame = $('.lichess_game, .board_and_ground');
         var $boardWrap = $lichessGame.find('.cg-board-wrap').not('.mini_board .cg-board-wrap');
@@ -408,8 +371,8 @@ lichess.topMenuIntent = function() {
           return Math.round(i) + 'px';
         };
 
-        $('.underboard').css("width", px(512 * zoom + 242 + 15));
-        $boardWrap.add($('.underboard .center, .progress_bar_container')).css("width", px(512 * zoom));
+        $('.underboard').css("width", px(boardPx + 242 + 15));
+        $boardWrap.add($('.underboard .center, .progress_bar_container')).css("width", px(boardPx));
 
         if ($('body > .content').hasClass('is3d')) {
           $boardWrap.css("height", px(464.5 * zoom));
@@ -419,9 +382,9 @@ lichess.topMenuIntent = function() {
           });
           $('#chat').css("height", px(300 + 529 * (zoom - 1)));
         } else {
-          $boardWrap.css("height", px(512 * zoom));
+          $boardWrap.css("height", px(boardPx));
           $lichessGame.css({
-            height: px(512 * zoom),
+            height: px(boardPx),
             paddingTop: px(0)
           });
           $('#chat').css("height", px(335 + 510 * (zoom - 1)));
@@ -496,7 +459,8 @@ lichess.topMenuIntent = function() {
       $('input.user-autocomplete').each(function() {
         var opts = {
           focus: 1,
-          friend: $(this).data('friend')
+          friend: $(this).data('friend'),
+          tag: $(this).data('tag')
         };
         if ($(this).attr('autofocus')) lichess.userAutocomplete($(this), opts);
         else $(this).one('focus', function() {

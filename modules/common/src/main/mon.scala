@@ -279,6 +279,8 @@ object mon {
       // val discard = inc(s"mod.report.irwin.discard")
       val report = inc(s"mod.report.irwin.report")
       val mark = inc(s"mod.report.irwin.mark")
+      def ownerReport(name: String) = inc(s"mod.irwin.owner_report.$name")
+      def streamEventType(name: String) = inc(s"mod.irwin.streama.event_type.$name")
     }
   }
   object relay {
@@ -333,6 +335,9 @@ object mon {
     }
     object rateLimit {
       def generic(key: String) = inc(s"security.rate_limit.generic.$key")
+    }
+    object linearLimit {
+      def generic(key: String) = inc(s"security.linear_limit.generic.$key")
     }
   }
   object tv {
@@ -397,6 +402,13 @@ object mon {
       val time = rec("puzzle.selector")
       def vote(v: Int) = rec("puzzle.selector.vote")(1000 + v) // vote sum of selected puzzle
     }
+    object batch {
+      object selector {
+        val count = incX("puzzle.batch.selector")
+        val time = rec("puzzle.batch.selector")
+      }
+      val solve = incX("puzzle.batch.solve")
+    }
     object round {
       val user = inc("puzzle.attempt.user")
       val anon = inc("puzzle.attempt.anon")
@@ -423,6 +435,20 @@ object mon {
       def speed(v: String) = inc(s"game.create.speed.$v")
       def source(v: String) = inc(s"game.create.source.$v")
       def mode(v: String) = inc(s"game.create.mode.$v")
+    }
+    object pgn {
+      final class Protocol(name: String) {
+        val count = inc(s"game.pgn.$name.count")
+        val time = rec(s"game.pgn.$name.time")
+      }
+      object oldBin {
+        val encode = new Protocol("oldBin.encode")
+        val decode = new Protocol("oldBin.decode")
+      }
+      object huffman {
+        val encode = new Protocol("huffman.encode")
+        val decode = new Protocol("huffman.decode")
+      }
     }
   }
   object chat {
@@ -504,6 +530,7 @@ object mon {
       }
       val post = rec("fishnet.analysis.post")
       val requestCount = inc("fishnet.analysis.request")
+      val evalCacheHits = rec("fishnet.analysis.eval_cache_hits")
     }
   }
   object api {
@@ -541,10 +568,11 @@ object mon {
     val unknown = inc("jsmon.unknown")
   }
 
-  def measure[A](path: RecPath)(op: => A): A = {
+  def measure[A](path: RecPath)(op: => A): A = measureRec(path(this))(op)
+  def measureRec[A](rec: Rec)(op: => A): A = {
     val start = System.nanoTime()
     val res = op
-    path(this)(System.nanoTime() - start)
+    rec(System.nanoTime() - start)
     res
   }
   def measureIncMicros[A](path: IncXPath)(op: => A): A = {

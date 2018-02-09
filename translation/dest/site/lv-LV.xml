@@ -31,7 +31,7 @@
   <string name="joinTheGame">Pievienoties spēlei</string>
   <string name="whitePlays">Gājiens baltajiem</string>
   <string name="blackPlays">Gājiens melnajiem</string>
-  <string name="opponentLeftChoices">Tavs pretinieks ir pametis spēli. Tu vari piespiest viņu padoties,pieprasīt neizšķirtu,vai gaidīt.</string>
+  <string name="opponentLeftChoices">Tavs pretinieks ir pametis spēli. Tu vari pieprasīt uzvaru, pabeigt spēli neizšķirtu, vai gaidīt.</string>
   <string name="makeYourOpponentResign">Lieciet pretiniekam padoties</string>
   <string name="forceResignation">Piespiest padošanos</string>
   <string name="forceDraw">Pieprasīt neizšķirtu</string>
@@ -56,6 +56,9 @@
   <string name="showThreat">Parādīt draudus</string>
   <string name="inLocalBrowser">savā pārlūkprogrammā</string>
   <string name="toggleLocalEvaluation">Pārslēgt uz lokālo vērtēšanu</string>
+  <string name="promoteVariation">Priekšroka variantam</string>
+  <string name="makeMainLine">Pārvērst par pamatvariantu</string>
+  <string name="deleteFromHere">Dzēst sākot no šejienes</string>
   <string name="move">Gājiens</string>
   <string name="variantLoss">Zaudējums</string>
   <string name="variantWin">Uzvara</string>
@@ -105,8 +108,11 @@
   <string name="memory">Atmiņa</string>
   <string name="infiniteAnalysis">Bezgalīga analīze</string>
   <string name="removesTheDepthLimit">Noņem dziļuma ierobežojumu un uztur tavu datoru siltu</string>
+  <string name="blunder">Rupja kļūda</string>
   <string name="blunders">Rupjas kļūdas</string>
+  <string name="mistake">Kļūda</string>
   <string name="mistakes">Kļūdas</string>
+  <string name="inaccuracy">Neprecizitāte</string>
   <string name="inaccuracies">Sīkas kļūdas</string>
   <string name="moveTimes">Gājienu ilgumi</string>
   <string name="flipBoard">Apgriezt galdiņu</string>
@@ -200,6 +206,7 @@
   <string name="accept">Pieņemt</string>
   <string name="decline">Noraidīt</string>
   <string name="playingRightNow">Patlaban spēlē</string>
+  <string name="eventInProgress">Patlaban notiek</string>
   <string name="finished">Beigušies</string>
   <string name="abortGame">Atcelt spēli</string>
   <string name="gameAborted">Spēle atcelta</string>
@@ -208,6 +215,8 @@
   <string name="mode">Režīms</string>
   <string name="casual">Draudzīgs</string>
   <string name="rated">Vērtēts</string>
+  <string name="casualTournament">Draudzīgs</string>
+  <string name="ratedTournament">Vērtēts</string>
   <string name="thisGameIsRated">Šī spēle tiek vērtēta</string>
   <string name="rematch">Revanšēties</string>
   <string name="rematchOfferSent">Revanša piedāvājums nosūtīts</string>
@@ -279,6 +288,11 @@
   <string name="tournament">Turnīrs</string>
   <string name="tournaments">Turnīri</string>
   <string name="tournamentPoints">Turnīru punkti</string>
+  <plurals name="nbTournamentPoints">
+    <item quantity="zero">%s turnīra punkti</item>
+    <item quantity="one">%s turnīra punkts</item>
+    <item quantity="other">%s turnīra punkti</item>
+  </plurals>
   <string name="viewTournament">Skatīt turnīru</string>
   <string name="backToTournament">Atgriesties turnīrā</string>
   <string name="thematic">Tematisks</string>
@@ -483,7 +497,7 @@
   <string name="automaticallyProceedToNextGameAfterMoving">Pēc gājiena izdarīšanas automātiski pāriet pie nākamās spēles</string>
   <string name="autoSwitch">Pašpārslēgšanās</string>
   <string name="puzzles">Uzdevumi</string>
-  <string name="latestUpdates">Pēdējās atjaunināšanas</string>
+  <string name="latestUpdates">Jaunākās ziņas</string>
   <string name="tournamentWinners">Turnīra uzvarētāji</string>
   <string name="name">Vārds</string>
   <string name="description">Apraksts</string>
@@ -787,5 +801,67 @@
   <string name="notifications">Paziņojumi</string>
   <string name="challenges">Izaicinājumi</string>
   <string name="perfRatingX">Reitings: %s</string>
-  <string name="xSecondsToPlayTheFirstMove">%s sekundes lai izdarītu pirmo gājienu</string>
+  <plurals name="nbSecondsToPlayTheFirstMove">
+    <item quantity="zero">%s sekundes lai izdarītu pirmo gājienu</item>
+    <item quantity="one">%s sekunde lai izdarītu pirmo gājienu</item>
+    <item quantity="other">%s sekundes lai izdarītu pirmo gājienu</item>
+  </plurals>
+  <string name="practiceWithComputer">Treniņš ar datoru</string>
+  <string name="anotherWasX">Varēja arī %s</string>
+  <string name="bestWasX">Labākais bija %s</string>
+  <string name="youBrowsedAway">Tu aizlūkojies prom</string>
+  <string name="resumePractice">Atsākt treniņu</string>
+  <string name="theGameIsADraw">Spēle ir neizšķirts.</string>
+  <string name="computerThinking">Dators domā ...</string>
+  <string name="seeBestMove">Redzēt labāko gājienu</string>
+  <string name="hideBestMove">Nerādīt labāko gājienu</string>
+  <string name="getAHint">Saņem padomu</string>
+  <string name="evaluatingYourMove">Novērtējam tavu gājienu ...</string>
+  <string name="whiteWinsGame">Baltie uzvar</string>
+  <string name="blackWinsGame">Melnie uzvar</string>
+  <string name="learnFromYourMistakes">Mācies no savām kļūdām</string>
+  <string name="learnFromThisMistake">Mācīties no šīs kļūdas</string>
+  <string name="skipThisMove">Izlaist šo gājienu</string>
+  <string name="next">Nākamais</string>
+  <string name="xWasPlayed">%s tika izspēlēts</string>
+  <string name="findBetterMoveForWhite">Atrodi labāku gājienu baltajiem</string>
+  <string name="findBetterMoveForBlack">Atrodi labāku gājienu melnajiem</string>
+  <string name="resumeLearning">Atsākt mācības</string>
+  <string name="youCanDoBetter">Tu vari labāk</string>
+  <string name="tryAnotherMoveForWhite">Izmēģini citu gājienu ar baltajām</string>
+  <string name="tryAnotherMoveForBlack">Izmēģini citu gājienu ar melnajām</string>
+  <string name="solution">Risinājums</string>
+  <string name="waitingForAnalysis">Gaidām analīzi</string>
+  <string name="noMistakesFoundForWhite">Baltajiem kļūdas nav atrastas</string>
+  <string name="noMistakesFoundForBlack">Melnajiem kļūdas netika atrastas</string>
+  <string name="doneReviewingWhiteMistakes">Balto kļūdu pārskatīšana pabeigta</string>
+  <string name="doneReviewingBlackMistakes">Melno kļūdu pārskatīšana pabeigta</string>
+  <string name="doItAgain">Dari to vēl</string>
+  <string name="reviewWhiteMistakes">Pārskatīt balto kļūdas</string>
+  <string name="reviewBlackMistakes">Pārskatīt melno kļūdas</string>
+  <string name="advantage">Pārsvars</string>
+  <plurals name="nbSeconds">
+    <item quantity="zero">%s sekundes</item>
+    <item quantity="one">%s sekunde</item>
+    <item quantity="other">%s sekundes</item>
+  </plurals>
+  <string name="opening">Atklātne</string>
+  <string name="middlegame">Vidusspēle</string>
+  <string name="endgame">Galotne</string>
+  <string name="registerToSendChallenges">Lūdzu reģistrējies lai sūtītu izaicinājumus.</string>
+  <string name="youCannotChallengeX">Tu nevari izaicināt %s.</string>
+  <string name="xDoesNotAcceptChallenges">%s nepieņem izaicinājumus.</string>
+  <string name="yourXRatingIsTooFarFromY">Tavs %1$s reitings ir pārāk tālu no %2$s.</string>
+  <string name="cannotChallengeDueToProvisionalXRating">Nevar izaicināt pagaidu %s reitinga dēļ.</string>
+  <string name="xOnlyAcceptsChallengesFromFriends">%s pieņem izaicinājumus tikai no draugiem.</string>
+  <string name="conditionalPremoves">Nosacījumu priekšgājieni</string>
+  <string name="addCurrentVariation">Pievienot pašreizējo variantu</string>
+  <string name="playVariationToCreateConditionalPremoves">Izspēlē variantu lai izveidotu nosacījumu priekšgājienus</string>
+  <string name="noConditionalPremoves">Nav nosacījumu priekšgājienu</string>
+  <string name="playX">Spēlēt %s</string>
+  <plurals name="andSaveNbPremoveLines">
+    <item quantity="zero">un saglabāt %s priekšgājienu variantus</item>
+    <item quantity="one">un saglabāt %s priekšgājienu variantu</item>
+    <item quantity="other">un saglabāt %s priekšgājienu variantus</item>
+  </plurals>
 </resources>

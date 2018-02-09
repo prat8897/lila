@@ -4,16 +4,17 @@ import { ctrl as memberCtrl } from './studyMembers';
 import { ctrl as chapterCtrl } from './studyChapters';
 import practiceCtrl from './practice/studyPracticeCtrl';
 import { StudyPracticeData, StudyPracticeCtrl } from './practice/interfaces';
-import { ctrl as commentFormCtrl } from './commentForm';
-import { ctrl as glyphFormCtrl } from './studyGlyph';
+import { ctrl as commentFormCtrl, CommentForm } from './commentForm';
+import { ctrl as glyphFormCtrl, GlyphCtrl } from './studyGlyph';
 import { ctrl as studyFormCtrl, StudyFormCtrl } from './studyForm';
 import { ctrl as notifCtrl } from './notif';
 import { ctrl as shareCtrl } from './studyShare';
 import { ctrl as tagsCtrl } from './studyTags';
+import { ctrl as serverEvalCtrl } from './serverEval';
 import * as tours from './studyTour';
 import * as xhr from './studyXhr';
 import { path as treePath } from 'tree';
-import { StudyCtrl, StudyVm, Tab, TagTypes, StudyData, StudyChapterMeta, ReloadData } from './interfaces';
+import { StudyCtrl, StudyVm, Tab, ToolTab, TagTypes, StudyData, StudyChapterMeta, ReloadData } from './interfaces';
 import GamebookPlayCtrl from './gamebook/gamebookPlayCtrl';
 import { ChapterDescriptionCtrl } from './chapterDescription';
 import RelayCtrl from './relay/relayCtrl';
@@ -36,6 +37,7 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
     return {
       loading: false,
       tab: prop<Tab>(relayData || data.chapters.length > 1 ? 'chapters' : 'members'),
+      toolTab: prop<ToolTab>('tags'),
       chapterId: sticked ? data.position.chapterId : data.chapter.id,
       // path is at ctrl.path
       mode: {
@@ -104,8 +106,8 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
     return vm.mode.sticky = false;
   };
 
-  const commentForm = commentFormCtrl(ctrl);
-  const glyphForm = glyphFormCtrl(ctrl);
+  const commentForm: CommentForm = commentFormCtrl(ctrl);
+  const glyphForm: GlyphCtrl = glyphFormCtrl(ctrl);
   const tags = tagsCtrl(ctrl, () => data.chapter, tagTypes);
   const desc = new ChapterDescriptionCtrl(data.chapter.description, t => {
     data.chapter.description = t;
@@ -114,6 +116,8 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
       description: t
     });
   }, redraw);
+
+  const serverEval = serverEvalCtrl(ctrl, () => vm.chapterId);
 
   function addChapterId(req) {
     req.ch = vm.chapterId;
@@ -155,7 +159,6 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
     const sameChapter = data.chapter.id === s.chapter.id;
     vm.mode.sticky = (vm.mode.sticky && s.features.sticky) || (!data.features.sticky && s.features.sticky);
     if (vm.mode.sticky) vm.behind = 0;
-    if (vm.mode.sticky && s.position !== data.position) commentForm.close();
     'position name visibility features settings chapter likes liked'.split(' ').forEach(key => {
       data[key] = s[key];
     });
@@ -193,6 +196,8 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
     vm.justSetChapterId = undefined;
 
     configurePractice();
+    serverEval.reset();
+    commentForm.onSetPath(data.chapter.id, ctrl.path, ctrl.node, false);
 
     redraw();
     ctrl.startCeval();
@@ -207,7 +212,7 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
     ).then(onReload, li.reload);
   };
 
-  const onSetPath = throttle(300, false, (path: Tree.Path) => {
+  const onSetPath = throttle(300, (path: Tree.Path) => {
     if (vm.mode.sticky && path !== data.position.path) makeChange("setPath", addChapterId({
       path
     }));
@@ -294,7 +299,6 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
         if (sticky && !vm.mode.sticky) redraw();
         return;
       }
-      // node author already has the node
       if (sticky && who && who.s === sri) {
         data.position.path = position.path + node.id;
         return;
@@ -454,6 +458,7 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
     notif,
     commentForm,
     glyphForm,
+    serverEval,
     share,
     tags,
     desc,
@@ -485,9 +490,9 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
       if (gamebookPlay) gamebookPlay.onJump();
     },
     withPosition,
-    setPath(path, node) {
+    setPath(path, node, playedMyself) {
       onSetPath(path);
-      setTimeout(() => commentForm.onSetPath(path, node), 100);
+      commentForm.onSetPath(vm.chapterId, path, node, playedMyself);
     },
     deleteNode(path) {
       makeChange("deleteNode", addChapterId({
@@ -520,7 +525,6 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
     },
     toggleWrite: function() {
       vm.mode.write = !vm.mode.write && members.canContribute();
-      if (!vm.mode.write) commentForm.close();
       xhrReload();
     },
     isWriting,
@@ -548,6 +552,7 @@ export default function(data: StudyData, ctrl: AnalyseCtrl, tagTypes: TagTypes, 
       makeChange('explorerGame', withPosition({ gameId, insert }));
     },
     redraw,
+    trans: ctrl.trans,
     socketHandler: (t: string, d: any) => {
       const handler = socketHandlers[t];
       if (handler) {

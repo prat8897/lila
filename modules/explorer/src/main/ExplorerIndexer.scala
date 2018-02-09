@@ -40,7 +40,7 @@ private final class ExplorerIndexer(
         Query.createdSince(since) ++
           Query.rated ++
           Query.finished ++
-          Query.turnsMoreThan(8) ++
+          Query.turnsGt(8) ++
           Query.noProvisional ++
           Query.bothRatingsGreaterThan(1501)
 
@@ -120,9 +120,9 @@ private final class ExplorerIndexer(
     import lila.rating.PerfType._
     game.perfType ?? {
       case Correspondence => 1
-      case Classical if rating >= 2000 => 1
-      case Classical if rating >= 1800 => 2 / 5f
-      case Classical => 1 / 8f
+      case Rapid | Classical if rating >= 2000 => 1
+      case Rapid | Classical if rating >= 1800 => 2 / 5f
+      case Rapid | Classical => 1 / 8f
       case Blitz if rating >= 2000 => 1
       case Blitz if rating >= 1800 => 1 / 4f
       case Blitz => 1 / 15f

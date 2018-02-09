@@ -38,13 +38,13 @@ object Relay extends LilaController {
   }
 
   def edit(slug: String, id: String) = Auth { implicit ctx => me =>
-    OptionFuResult(env.api.byIdAndOwner(id, me)) { relay =>
+    OptionFuResult(env.api.byIdAndContributor(id, me)) { relay =>
       Ok(html.relay.edit(relay, env.forms.edit(relay))).fuccess
     }
   }
 
   def update(slug: String, id: String) = AuthBody { implicit ctx => me =>
-    OptionFuResult(env.api.byIdAndOwner(id, me)) { relay =>
+    OptionFuResult(env.api.byIdAndContributor(id, me)) { relay =>
       implicit val req = ctx.body
       env.forms.edit(relay).bindFromRequest.fold(
         err => BadRequest(html.relay.edit(relay, err)).fuccess,
@@ -86,7 +86,8 @@ object Relay extends LilaController {
     data = lila.relay.JsonView.makeData(relay, studyData)
     chat <- Study.chatOf(sc.study)
     sVersion <- Env.study.version(sc.study.id)
-  } yield Ok(html.relay.show(relay, sc.study, data, chat, sVersion))
+    streams <- Study.streamsOf(sc.study)
+  } yield Ok(html.relay.show(relay, sc.study, data, chat, sVersion, streams))
 
   def websocket(id: String, apiVersion: Int) = SocketOption[JsValue] { implicit ctx =>
     get("sri") ?? { uid =>

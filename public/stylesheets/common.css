@@ -53,8 +53,8 @@ time {
 }
 @font-face {
   font-family: "lichess";
-  src: url("../font75/fonts/lichess.eot");
-  src: url("../font75/fonts/lichess.eot?#iefix") format("embedded-opentype"), url("../font75/fonts/lichess.woff") format("woff"), url("../font75/fonts/lichess.ttf") format("truetype");
+  src: url("../font80/fonts/lichess.eot");
+  src: url("../font80/fonts/lichess.eot?#iefix") format("embedded-opentype"), url("../font80/fonts/lichess.woff") format("woff"), url("../font80/fonts/lichess.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
@@ -62,7 +62,7 @@ time {
   font-family: 'PT Serif';
   font-style: italic;
   font-weight: 400;
-  src: local('PT Serif Italic'), local('PTSerif-Italic'), url(//fonts.gstatic.com/s/ptserif/v8/03aPdn7fFF3H6ngCgAlQzPk_vArhqVIZ0nv9q090hN8.woff2) format('woff2');
+  src: local('PT Serif Italic'), local('PTSerif-Italic'), url(https://fonts.gstatic.com/s/ptserif/v8/03aPdn7fFF3H6ngCgAlQzPk_vArhqVIZ0nv9q090hN8.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
 }
 .is::before,
@@ -286,6 +286,23 @@ group.radio input:checked + label {
 }
 #powerTip a.mini_board {
   border-width: 0 0 1px 0;
+}
+#powerTip .mod_info_box {
+  position: relative;
+  padding: 5px;
+  background: #888;
+  color: #eee;
+  white-space: nowrap;
+}
+#powerTip .mod_marks {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 3px 5px;
+  background: #dc322f;
+}
+#powerTip .mod_marks i {
+  padding: 0px;
 }
 #powerTip .country {
   float: right;
@@ -604,9 +621,6 @@ div.content_box.no_padding h1 {
   display: block;
   padding: 20px 25px;
 }
-div.content_box .content_box_title {
-  padding: 20px 20px 0 20px;
-}
 div.content_box_top {
   padding: 10px 0 0 20px;
   background-color: #f0f0f0;
@@ -677,7 +691,7 @@ div.side h2 {
   text-align: center;
   font-size: 1.5em;
 }
-div.side_box {
+.side_box {
   margin-top: 12px;
   margin-left: -30px;
   width: 226px;
@@ -811,6 +825,22 @@ div.side form.search input {
 }
 #site_header div.side_menu .sep {
   margin: 10px;
+}
+.context-streamer {
+  display: block;
+  padding: 5px;
+  margin: 0 0 1px -30px;
+  color: #fff!important;
+  background: rgba(117,153,0,0.5);
+  border-radius: 0 0 3px 3px;
+  overflow: hidden;
+  white-space:nowrap;
+}
+.context-streamer::before {
+  font-size: 1.5em;
+}
+.context-streamer:hover {
+  background: rgba(117,153,0,0.7);
 }
 
 #ham-plate {
@@ -1065,7 +1095,6 @@ group.radio label:hover {
 a.button:active {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12) inset;
 }
-.button:focus {outline:0;}
 
 /* active gradient */
 
@@ -1115,7 +1144,7 @@ div.pagination span.current,
   animation: none;
 }
 .fbt:not(:disabled):active,
-.fbt.active {
+body.base .fbt.active {
   background: #3893E8!important;
   color: #fff;
 }

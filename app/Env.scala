@@ -15,15 +15,13 @@ final class Env(
 
   private val RendererName = config getString "app.renderer.name"
 
-  lazy val bus = lila.common.Bus(system)
-
   lazy val preloader = new mashup.Preload(
     tv = Env.tv.tv,
     leaderboard = Env.user.cached.topWeek,
     tourneyWinners = Env.tournament.winners.all.map(_.top),
     timelineEntries = Env.timeline.entryApi.userEntries _,
     dailyPuzzle = tryDailyPuzzle,
-    streamsOnAir = () => Env.tv.streamsOnAir.all,
+    liveStreams = () => Env.streamer.liveStreamApi.all,
     countRounds = Env.round.count,
     lobbyApi = Env.api.lobbyApi,
     getPlayban = Env.playban.api.currentBan _,
@@ -45,12 +43,13 @@ final class Env(
   lazy val userInfo = mashup.UserInfo(
     relationApi = Env.relation.api,
     trophyApi = Env.user.trophyApi,
+    shieldApi = Env.tournament.shieldApi,
     postApi = Env.forum.postApi,
     studyRepo = Env.study.studyRepo,
     getRatingChart = Env.history.ratingChartApi.apply,
     getRanks = Env.user.cached.ranking.getAll,
     isHostingSimul = Env.simul.isHosting,
-    fetchIsStreamer = Env.tv.isStreamer.apply,
+    fetchIsStreamer = Env.streamer.api.isStreamer,
     fetchTeamIds = Env.team.cached.teamIdsList,
     fetchIsCoach = Env.coach.api.isListedCoach,
     insightShare = Env.insight.share,
@@ -73,6 +72,35 @@ final class Env(
         lila.log("preloader").warn("daily puzzle", e)
         none
     }
+
+  def closeAccount(userId: lila.user.User.ID): Funit = for {
+    user <- lila.user.UserRepo byId userId flatten s"No such user $userId"
+    goodUser <- !user.lameOrTroll ?? { !Env.playban.api.hasCurrentBan(user.id) }
+    _ <- lila.user.UserRepo.disable(user, keepEmail = !goodUser)
+    _ = Env.user.onlineUserIdMemo.remove(user.id)
+    following <- Env.relation.api fetchFollowing user.id
+    _ <- !goodUser ?? Env.activity.write.unfollowAll(user, following)
+    _ <- Env.relation.api.unfollowAll(user.id)
+    _ <- Env.user.rankingApi.remove(user.id)
+    _ <- Env.team.api.quitAll(user.id)
+    _ = Env.challenge.api.removeByUserId(user.id)
+    _ = Env.tournament.api.withdrawAll(user)
+    _ <- Env.plan.api.cancel(user).nevermind
+    _ <- Env.lobby.seekApi.removeByUser(user)
+    _ <- Env.security.store.disconnect(user.id)
+    _ <- Env.streamer.api.onClose(user)
+  } yield {
+    system.lilaBus.publish(lila.hub.actorApi.security.CloseAccount(user.id), 'accountClose)
+  }
+
+  system.lilaBus.subscribe(system.actorOf(Props(new Actor {
+    def receive = {
+      case lila.hub.actorApi.security.GarbageCollect(userId, _) =>
+        system.scheduler.scheduleOnce(1 second) {
+          closeAccount(userId)
+        }
+    }
+  })), 'garbageCollect)
 
   system.actorOf(Props(new actor.Renderer), name = RendererName)
 
@@ -193,4 +221,5 @@ object Env {
   def irwin = lila.irwin.Env.current
   def activity = lila.activity.Env.current
   def relay = lila.relay.Env.current
+  def streamer = lila.streamer.Env.current
 }

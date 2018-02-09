@@ -24,11 +24,12 @@ object Report extends LilaController {
   }
 
   private def renderList(room: String)(implicit ctx: Context) =
-    api.unprocessedAndRecentWithFilter(20, Room(room)) zip
-      api.countUnprocesssedByRooms flatMap {
-        case reports ~ counts =>
-          (Env.user.lightUserApi preloadMany reports.flatMap(_.userIds)) inject
-            Ok(html.report.list(reports, room, counts))
+    api.openAndRecentWithFilter(20, Room(room)) zip
+      api.countOpenByRooms zip
+      Env.streamer.api.approval.countRequests flatMap {
+        case reports ~ counts ~ streamers =>
+          (Env.user.lightUserApi preloadMany reports.flatMap(_.report.userIds)) inject
+            Ok(html.report.list(reports, room, counts, streamers))
       }
 
   def inquiry(id: String) = Secure(_.SeeReport) { implicit ctx => me =>
@@ -87,11 +88,9 @@ object Report extends LilaController {
   }
 
   def form = Auth { implicit ctx => implicit me =>
-    NotForKids {
-      get("username") ?? UserRepo.named flatMap { user =>
-        env.forms.createWithCaptcha map {
-          case (form, captcha) => Ok(html.report.form(form, user, captcha))
-        }
+    get("username") ?? UserRepo.named flatMap { user =>
+      env.forms.createWithCaptcha map {
+        case (form, captcha) => Ok(html.report.form(form, user, captcha))
       }
     }
   }
@@ -106,7 +105,7 @@ object Report extends LilaController {
       },
       data =>
         if (data.user == me) notFound
-        else api.create(data, lila.report.Reporter(me)) map { report =>
+        else api.create(data candidate lila.report.Reporter(me)) map { report =>
           Redirect(routes.Report.thanks(data.user.username))
         }
     )

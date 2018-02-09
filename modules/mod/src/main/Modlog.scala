@@ -46,10 +46,13 @@ case class Modlog(
     case Modlog.kickFromRankings => "kick from rankings"
     case Modlog.reportban => "reportban"
     case Modlog.unreportban => "un-reportban"
+    case Modlog.rankban => "rankban"
+    case Modlog.unrankban => "un-rankban"
     case Modlog.modMessage => "send message"
     case Modlog.coachReview => "disapprove coach review"
     case Modlog.cheatDetected => "game lost by cheat detection"
     case Modlog.cli => "run CLI command"
+    case Modlog.garbageCollect => "garbage collect"
     case a => a
   }
 
@@ -99,8 +102,11 @@ object Modlog {
   val kickFromRankings = "kickFromRankings"
   val reportban = "reportban"
   val unreportban = "unreportban"
+  val rankban = "rankban"
+  val unrankban = "unrankban"
   val modMessage = "modMessage"
   val coachReview = "coachReview"
   val cheatDetected = "cheatDetected"
   val cli = "cli"
+  val garbageCollect = "garbageCollect"
 }

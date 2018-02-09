@@ -25,18 +25,19 @@ private[puzzle] final class PuzzleApi(
     def find(id: PuzzleId): Fu[Option[Puzzle]] =
       puzzleColl.find($doc(F.id -> id)).uno[Puzzle]
 
+    def findMany(ids: List[PuzzleId]): Fu[List[Option[Puzzle]]] =
+      puzzleColl.optionsByOrderedIds[Puzzle, PuzzleId](ids)(_.id)
+
     def latest(nb: Int): Fu[List[Puzzle]] =
       puzzleColl.find($empty)
         .sort($doc(F.date -> -1))
         .cursor[Puzzle]()
         .gather[List](nb)
 
-    private def lastId: Fu[Int] = lila.db.Util findNextId puzzleColl map (_ - 1)
-
     val cachedLastId = asyncCache.single(
       name = "puzzle.lastId",
-      lastId,
-      expireAfter = _.ExpireAfterWrite(20 minutes)
+      f = lila.db.Util findNextId puzzleColl map (_ - 1),
+      expireAfter = _.ExpireAfterWrite(1 day)
     )
 
     def importOne(json: JsValue, token: String): Fu[PuzzleId] =
@@ -74,7 +75,7 @@ private[puzzle] final class PuzzleApi(
 
   object round {
 
-    def add(a: Round) = roundColl insert a void
+    def add(a: Round) = roundColl insert a
   }
 
   object vote {
@@ -115,15 +116,14 @@ private[puzzle] final class PuzzleApi(
 
     def find(user: User): Fu[Option[PuzzleHead]] = headColl.byId[PuzzleHead](user.id)
 
-    def add(h: PuzzleHead) = headColl.update($id(h.id), h, upsert = true) void
+    def set(h: PuzzleHead) = headColl.update($id(h.id), h, upsert = true) void
 
-    def addNew(user: User, puzzleId: PuzzleId) = add(PuzzleHead(user.id, puzzleId.some, puzzleId))
+    def addNew(user: User, puzzleId: PuzzleId) = set(PuzzleHead(user.id, puzzleId.some, puzzleId))
 
     def solved(user: User, id: PuzzleId) = head find user flatMap {
-      case Some(PuzzleHead(_, Some(c), n)) if c == id && c > n => headColl update (
-        $id(user.id),
+      case Some(PuzzleHead(_, Some(c), n)) if c == id && c > n => set {
         PuzzleHead(user.id, none, id)
-      )
+      }
       case Some(PuzzleHead(_, Some(c), n)) if c == id => headColl update (
         $id(user.id),
         $unset(PuzzleHead.BSONFields.current)

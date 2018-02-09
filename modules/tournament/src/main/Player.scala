@@ -5,16 +5,14 @@ import lila.user.{ User, Perfs }
 
 private[tournament] case class Player(
     _id: String, // random
-    tourId: String,
-    userId: String,
+    tourId: Tournament.ID,
+    userId: User.ID,
     rating: Int,
     provisional: Boolean,
     withdraw: Boolean = false,
     score: Int = 0,
-    ratingDiff: Int = 0,
-    magicScore: Int = 0,
     fire: Boolean = false,
-    performance: Option[Int] = none
+    performance: Int = 0
 ) {
 
   def id = _id
@@ -28,14 +26,14 @@ private[tournament] case class Player(
   def doWithdraw = copy(withdraw = true)
   def unWithdraw = copy(withdraw = false)
 
-  def finalRating = rating + ratingDiff
+  def magicScore = score * 10000 + (performanceOption | rating)
 
-  def recomputeMagicScore = copy(
-    magicScore = ((score * 100000) + (ratingDiff * 100) + (rating / 10)) atMost Int.MaxValue
-  )
+  def performanceOption = performance > 0 option performance
 }
 
 private[tournament] object Player {
+
+  case class WithUser(player: Player, user: User)
 
   private[tournament] def make(tourId: String, user: User, perfLens: Perfs => Perf): Player = new Player(
     _id = lila.game.IdGenerator.game,
@@ -43,5 +41,5 @@ private[tournament] object Player {
     userId = user.id,
     rating = perfLens(user.perfs).intRating,
     provisional = perfLens(user.perfs).provisional
-  ).recomputeMagicScore
+  )
 }

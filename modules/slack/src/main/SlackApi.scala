@@ -81,10 +81,10 @@ final class SlackApi(
     channel = "tavern"
   ))
 
-  def autoKill(u: User): Funit = client(SlackMessage(
-    username = u.username,
-    icon = "skull_and_crossbones",
-    text = s"AutoKill candidate: ${userLink(u.username)}",
+  def garbageCollector(message: String): Funit = client(SlackMessage(
+    username = "lichess",
+    icon = "put_litter_in_its_place",
+    text = linkifyUsers(message),
     channel = "tavern"
   ))
 

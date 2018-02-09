@@ -4,8 +4,7 @@
   "description": "lichess.org command line interface",
   "author": "Thibault Duplessis",
   "license": "AGPL-3.0",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/jquery": "^2.0",
     "browserify": "^14",
@@ -13,7 +12,7 @@
     "gulp-uglify": "^3",
     "gulp-util": "^3",
     "tsify": "^3",
-    "types": "link:../types",
+    "@types/lichess": "1.0.0",
     "typescript": "^2",
     "vinyl-buffer": "^1",
     "vinyl-source-stream": "^1",

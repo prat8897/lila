@@ -8,8 +8,8 @@ import lila.api.{ Context, BodyContext }
 import lila.app._
 import lila.app.mashup.{ GameFilterMenu, GameFilter }
 import lila.common.paginator.Paginator
-import lila.common.{ IpAddress, HTTPRequest }
 import lila.common.PimpedJson._
+import lila.common.{ IpAddress, HTTPRequest }
 import lila.game.{ GameRepo, Game => GameModel }
 import lila.rating.PerfType
 import lila.socket.UserLagCache
@@ -117,7 +117,7 @@ object User extends LilaController {
 
   def showMini(username: String) = Open { implicit ctx =>
     OptionFuResult(UserRepo named username) { user =>
-      if (user.enabled) for {
+      if (user.enabled || isGranted(_.UserSpy)) for {
         blocked <- ctx.userId ?? { relationApi.fetchBlocks(user.id, _) }
         crosstable <- ctx.userId ?? { Env.game.crosstableApi(user.id, _) }
         followable <- ctx.isAuth ?? { Env.pref.api.followable(user.id) }
@@ -206,6 +206,7 @@ object User extends LilaController {
           Ok(Json.obj(
             "bullet" -> leaderboards.bullet,
             "blitz" -> leaderboards.blitz,
+            "rapid" -> leaderboards.rapid,
             "classical" -> leaderboards.classical,
             "crazyhouse" -> leaderboards.crazyhouse,
             "chess960" -> leaderboards.chess960,
@@ -247,10 +248,11 @@ object User extends LilaController {
         Env.plan.api.recentChargesOf(user) zip
         Env.report.api.byAndAbout(user, 20) zip
         Env.pref.api.getPref(user) zip
-        Env.irwin.api.status(user) flatMap {
+        Env.irwin.api.reports.withPovs(user) flatMap {
           case emails ~ spy ~ assess ~ history ~ charges ~ reports ~ pref ~ irwin =>
-            (Env.playban.api bans spy.usersSharingIp.map(_.id)) zip
-              Env.user.noteApi.forMod(user.id :: spy.otherUserIds) zip
+            val familyUserIds = user.id :: spy.otherUserIds.toList
+            Env.playban.api.bans(familyUserIds) zip
+              Env.user.noteApi.forMod(familyUserIds) zip
               Env.user.lightUserApi.preloadMany {
                 reports.userIds ::: assess.??(_.games).flatMap(_.userIds)
               } map {
@@ -314,13 +316,16 @@ object User extends LilaController {
       case None => BadRequest("No search term provided").fuccess
       case Some(term) if getBool("exists") => UserRepo nameExists term map { r => Ok(JsBoolean(r)) }
       case Some(term) => {
-        ctx.me.ifTrue(getBool("friend")) match {
-          case None => UserRepo userIdsLike term
-          case Some(follower) =>
-            Env.relation.api.searchFollowedBy(follower, term, 10) flatMap {
-              case Nil => UserRepo userIdsLike term
-              case userIds => fuccess(userIds)
-            }
+        get("tour") match {
+          case Some(tourId) => Env.tournament.playerRepo.searchPlayers(tourId, term, 10)
+          case None => ctx.me.ifTrue(getBool("friend")) match {
+            case None => UserRepo userIdsLike term
+            case Some(follower) =>
+              Env.relation.api.searchFollowedBy(follower, term, 10) flatMap {
+                case Nil => UserRepo userIdsLike term
+                case userIds => fuccess(userIds)
+              }
+          }
         }
       } flatMap { userIds =>
         if (getBool("object")) Env.user.lightUserApi.asyncMany(userIds) map { users =>

@@ -1,11 +1,22 @@
 package lila.base
 
+import LilaTypes._
+import ornicar.scalalib.Zero
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
-import LilaTypes._
-import ornicar.scalalib.Zero
 
+/*
+ * When calling map, foreach, flatMap, etc.. on a future,
+ * the asynchronous callback is queued in the thread pool (execution context)
+ * and ran asynchronously when a thread is available.
+ * By specifying a DirectExecutionContext, we make the callback be called
+ * immediately, synchronously, in the same thread that just completed
+ * the future. This skips a trip in the thread pool and increases performance.
+ * Only use when the callback is trivial.
+ * E.g. futureString.map(_ + "!")(DirectExecutionContext)
+ * or   futureString.dmap(_ + "!") // shortcut
+ */
 object DirectExecutionContext extends ExecutionContext {
   override def execute(command: Runnable): Unit = command.run()
   override def reportFailure(cause: Throwable): Unit =
@@ -15,18 +26,19 @@ object DirectExecutionContext extends ExecutionContext {
 final class PimpedFuture[A](private val fua: Fu[A]) extends AnyVal {
   private type Fu[A] = Future[A]
 
-  def dmap[B](f: A => B): Fu[B] = fua.map(f)(DirectExecutionContext)
-  def dforeach[B](f: A => Unit): Unit = fua.foreach(f)(DirectExecutionContext)
+  // see DirectExecutionContext
+  @inline def dmap[B](f: A => B): Fu[B] = fua.map(f)(DirectExecutionContext)
+  @inline def dforeach[B](f: A => Unit): Unit = fua.foreach(f)(DirectExecutionContext)
 
   def >>-(sideEffect: => Unit): Fu[A] = fua andThen {
     case _ => sideEffect
   }
 
-  def >>[B](fub: => Fu[B]): Fu[B] = fua flatMap (_ => fub)
+  def >>[B](fub: => Fu[B]): Fu[B] = fua flatMap { _ => fub }
 
-  def void: Fu[Unit] = fua.map(_ => ())(DirectExecutionContext)
+  @inline def void: Fu[Unit] = dmap { _ => () }
 
-  def inject[B](b: => B): Fu[B] = fua.map(_ => b)(DirectExecutionContext)
+  @inline def inject[B](b: => B): Fu[B] = dmap { _ => b }
 
   def injectAnyway[B](b: => B): Fu[B] = fold(_ => b, _ => b)
 
@@ -142,12 +154,12 @@ final class PimpedFuture[A](private val fua: Fu[A]) extends AnyVal {
 final class PimpedFutureBoolean(private val fua: Fu[Boolean]) extends AnyVal {
 
   def >>&(fub: => Fu[Boolean]): Fu[Boolean] =
-    fua flatMap { if (_) fub else fuccess(false) }
+    fua.flatMap { if (_) fub else fuFalse }(DirectExecutionContext)
 
   def >>|(fub: => Fu[Boolean]): Fu[Boolean] =
-    fua flatMap { if (_) fuccess(true) else fub }
+    fua.flatMap { if (_) fuTrue else fub }(DirectExecutionContext)
 
-  def unary_! = fua.map { !_ }(DirectExecutionContext)
+  @inline def unary_! = fua.map { !_ }(DirectExecutionContext)
 }
 
 final class PimpedFutureOption[A](private val fua: Fu[Option[A]]) extends AnyVal {
@@ -165,7 +177,9 @@ final class PimpedFutureOption[A](private val fua: Fu[Option[A]]) extends AnyVal
 
 final class PimpedFutureValid[A](private val fua: Fu[Valid[A]]) extends AnyVal {
 
-  def flatten: Fu[A] = fua flatMap { _.fold[Fu[A]](fufail(_), fuccess(_)) }
+  def flatten: Fu[A] = fua.flatMap {
+    _.fold[Fu[A]](fufail(_), fuccess(_))
+  }(DirectExecutionContext)
 }
 
 final class PimpedTraversableFuture[A, M[X] <: TraversableOnce[X]](private val t: M[Fu[A]]) extends AnyVal {

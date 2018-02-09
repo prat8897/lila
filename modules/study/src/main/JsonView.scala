@@ -47,6 +47,7 @@ final class JsonView(
               "explorer" -> allowed(study.settings.explorer)
             )
           ).add("description", currentChapter.description)
+            .add("serverEval", currentChapter.serverEval)
             .add("relay", currentChapter.relay)(relayWrites) |> addChapterMode(currentChapter)
         }
       )
@@ -184,4 +185,6 @@ object JsonView {
       "secondsSinceLastMove" -> r.secondsSinceLastMove
     )
   }
+
+  private[study] implicit val serverEvalWrites: Writes[Chapter.ServerEval] = Json.writes[Chapter.ServerEval]
 }

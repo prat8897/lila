@@ -168,6 +168,11 @@ final class SocketHandler(
       id <- o.get[Chapter.Id]("d")
     } api.deleteChapter(byUserId, studyId, id, uid)
 
+    case ("clearAnnotations", o) => for {
+      byUserId <- member.userId
+      id <- o.get[Chapter.Id]("d")
+    } api.clearAnnotations(byUserId, studyId, id, uid)
+
     case ("sortChapters", o) => for {
       byUserId <- member.userId
       ids <- o.get[List[Chapter.Id]]("d")
@@ -231,12 +236,19 @@ final class SocketHandler(
       byUserId <- member.userId
       v <- (o \ "d" \ "liked").asOpt[Boolean]
     } api.like(studyId, byUserId, v, uid)
+
+    case ("requestAnalysis", o) => for {
+      byUserId <- member.userId
+      chapterId <- o.get[Chapter.Id]("d")
+    } api.analysisRequest(studyId, chapterId, byUserId)
+
   }: Handler.Controller) orElse evalCacheHandler(member, user) orElse lila.chat.Socket.in(
     chatId = Chat.Id(studyId.value),
     member = member,
     socket = socket,
     chat = chat,
-    canTimeout = Some(() => user.?? { u => api.isContributor(studyId, u.id) })
+    canTimeout = Some(() => user.?? { u => api.isContributor(studyId, u.id) }),
+    publicSource = none // the "talk" event is handled by the study API
   )
 
   private def reading[A](o: JsValue)(f: A => Unit)(implicit reader: Reads[A]): Unit =

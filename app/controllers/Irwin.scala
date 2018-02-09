@@ -28,25 +28,13 @@ object Irwin extends LilaController {
     }
   }
 
-  def getRequest = Open { implicit ctx =>
-    ModExternalBot {
-      Env.irwin.api.requests.getAndStart map {
-        case None => NotFound
-        case Some(req) => Ok(req.id)
-      }
-    }
-  }
-
   def assessment(username: String) = Open { implicit ctx =>
     ModExternalBot {
       OptionFuResult(UserRepo named username) { user =>
         Env.mod.assessApi.refreshAssessByUsername(user.id) >>
-          Env.mod.jsonView(user).flatMap {
-            case None => NotFound.fuccess
-            case Some(data) => Env.mod.userHistory(user) map { history =>
-              Ok(data + ("history" -> history))
-            }
-          }.map(_ as JSON)
+          Env.mod.jsonView(user) map {
+            _.fold[Result](NotFound) { obj => Ok(obj) as JSON }
+          }
       }
     }
   }

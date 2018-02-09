@@ -2,7 +2,6 @@ package controllers
 
 import play.api.mvc._
 
-import controllers.Auth.HasherRateLimit
 import lila.api.Context
 import lila.app._
 import lila.common.LilaCookie
@@ -40,7 +39,7 @@ object Account extends LilaController {
             lila.game.GameRepo.urgentGames(me) zip
             Env.challenge.api.countInFor.get(me.id) map {
               case nbFollowers ~ nbFollowing ~ prefs ~ povs ~ nbChallenges =>
-                Env.current.bus.publish(lila.user.User.Active(me), 'userActive)
+                Env.current.system.lilaBus.publish(lila.user.User.Active(me), 'userActive)
                 Ok {
                   import play.api.libs.json._
                   import lila.pref.JsonView._
@@ -89,7 +88,7 @@ object Account extends LilaController {
       FormFuResult(form) { err =>
         fuccess(html.account.passwd(err))
       } { data =>
-        HasherRateLimit(me.username) { _ =>
+        controllers.Auth.HasherRateLimit(me.username, req) { _ =>
           Env.user.authenticator.setPassword(me.id, ClearPassword(data.newPasswd1)) inject
             Redirect(s"${routes.Account.passwd}?ok=1")
         }
@@ -142,24 +141,12 @@ object Account extends LilaController {
     } { password =>
       Env.user.authenticator.authenticateById(me.id, ClearPassword(password)).map(_.isDefined) flatMap {
         case false => BadRequest(html.account.close(me, Env.security.forms.closeAccount)).fuccess
-        case true => doClose(me) inject {
+        case true => Env.current.closeAccount(me.id) inject {
           Redirect(routes.User show me.username) withCookies LilaCookie.newSession
         }
       }
     }
   }
-
-  private[controllers] def doClose(user: UserModel) =
-    (UserRepo disable user) >>-
-      env.onlineUserIdMemo.remove(user.id) >>
-      relationEnv.api.unfollowAll(user.id) >>
-      Env.user.rankingApi.remove(user.id) >>
-      Env.team.api.quitAll(user.id) >>-
-      Env.challenge.api.removeByUserId(user.id) >>-
-      Env.tournament.api.withdrawAll(user) >>
-      Env.plan.api.cancel(user).nevermind >>
-      Env.lobby.seekApi.removeByUser(user) >>
-      (Env.security.store disconnect user.id)
 
   def kid = Auth { implicit ctx => me =>
     Ok(html.account.kid(me)).fuccess

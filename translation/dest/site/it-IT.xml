@@ -56,6 +56,9 @@
   <string name="showThreat">Mostra minaccia</string>
   <string name="inLocalBrowser">nel browser locale</string>
   <string name="toggleLocalEvaluation">Attiva/disattiva analisi locale</string>
+  <string name="promoteVariation">Promuovi la variante</string>
+  <string name="makeMainLine">Rendi questa linea principale</string>
+  <string name="deleteFromHere">Elimina da qui</string>
   <string name="move">Mossa</string>
   <string name="variantLoss">Variante perdente</string>
   <string name="variantWin">Variante vincente</string>
@@ -103,8 +106,11 @@
   <string name="memory">Memoria</string>
   <string name="infiniteAnalysis">Analisi infinita</string>
   <string name="removesTheDepthLimit">Rimuove il limite di profondità di analisi e mantiene il tuo computer caldo</string>
+  <string name="blunder">Errore grave</string>
   <string name="blunders">Errori gravi</string>
+  <string name="mistake">Errore</string>
   <string name="mistakes">Errori</string>
+  <string name="inaccuracy">Imprecisione</string>
   <string name="inaccuracies">Imprecisioni</string>
   <string name="moveTimes">Tempo per mossa</string>
   <string name="flipBoard">Ruota la scacchiera</string>
@@ -191,6 +197,7 @@
   <string name="accept">Accetta</string>
   <string name="decline">Rifiuta</string>
   <string name="playingRightNow">Sta giocando in questo momento</string>
+  <string name="eventInProgress">In corso in questo momento</string>
   <string name="finished">Terminati</string>
   <string name="abortGame">Interrompi la partita</string>
   <string name="gameAborted">Partita interrotta</string>
@@ -199,6 +206,8 @@
   <string name="mode">Modalità</string>
   <string name="casual">Amichevole</string>
   <string name="rated">Classificata</string>
+  <string name="casualTournament">Amichevole</string>
+  <string name="ratedTournament">Classificata</string>
   <string name="thisGameIsRated">Questa partita è classificata</string>
   <string name="rematch">Rivincita</string>
   <string name="rematchOfferSent">Offerta di rivincita inviata</string>
@@ -208,10 +217,10 @@
   <string name="cancelRematchOffer">Annulla l\'offerta di rivincita</string>
   <string name="viewRematch">Osserva la rivincita</string>
   <string name="play">Gioca</string>
-  <string name="inbox">Casella postale</string>
+  <string name="inbox">Messaggi</string>
   <string name="chatRoom">Chat room</string>
   <string name="loginToChat">Entra per partecipare alla chat</string>
-  <string name="youHaveBeenTimedOut">Sei stato bloccato.</string>
+  <string name="youHaveBeenTimedOut">Sei stato temporaneamente bloccato.</string>
   <string name="spectatorRoom">Chat spettatori</string>
   <string name="composeMessage">Componi messaggio</string>
   <string name="noNewMessages">Nessun nuovo messaggio</string>
@@ -264,12 +273,16 @@
   <string name="tournament">Torneo</string>
   <string name="tournaments">Tornei</string>
   <string name="tournamentPoints">Punti di torneo</string>
+  <plurals name="nbTournamentPoints">
+    <item quantity="one">%s punto di torneo</item>
+    <item quantity="other">%s punti di torneo</item>
+  </plurals>
   <string name="viewTournament">Visualizza torneo</string>
   <string name="backToTournament">Ritorna al torneo</string>
   <string name="thematic">A tema</string>
   <plurals name="moreThanNbRatedGames">
-    <item quantity="one">≥ %s partita valida per la classifica</item>
-    <item quantity="other">≥ %s partite valide per la classifica</item>
+    <item quantity="one">≥ %s partita partita classificata</item>
+    <item quantity="other">≥ %s partite partite classificate</item>
   </plurals>
   <plurals name="moreThanNbPerfRatedGames">
     <item quantity="one">≥ %1$s %2%s partita valida per la classifica</item>
@@ -734,8 +747,8 @@ in %3$s</string>
   <string name="dark">Scuro</string>
   <string name="transparent">Trasparente</string>
   <string name="backgroundImageUrl">URL dell\'immagine di sfondo:</string>
-  <string name="boardGeometry">Geometria della scacchiera</string>
-  <string name="boardTheme">Tema della scacchiera</string>
+  <string name="boardGeometry">Geometria scacchiera</string>
+  <string name="boardTheme">Tema scacchiera</string>
   <string name="boardSize">Dimensione scacchiera</string>
   <string name="pieceSet">Set pezzi</string>
   <string name="embedInYourWebsite">Incorpora nel tuo sito Web</string>
@@ -758,5 +771,64 @@ in %3$s</string>
   <string name="notifications">Notifiche</string>
   <string name="challenges">Sfide</string>
   <string name="perfRatingX">Punteggio: %s</string>
-  <string name="xSecondsToPlayTheFirstMove">%s secondi per giocare la prima mossa</string>
+  <plurals name="nbSecondsToPlayTheFirstMove">
+    <item quantity="one">%s secondi per giocare la prima mossa</item>
+    <item quantity="other">%s secondi per giocare la prima mossa</item>
+  </plurals>
+  <string name="practiceWithComputer">Allenati con il computer</string>
+  <string name="anotherWasX">In alternativa %s</string>
+  <string name="bestWasX">Mossa migliore %s</string>
+  <string name="youBrowsedAway">Ti sei allontanato</string>
+  <string name="resumePractice">Riprendi la pratica</string>
+  <string name="theGameIsADraw">La partita è patta.</string>
+  <string name="computerThinking">Il computer sta pensando...</string>
+  <string name="seeBestMove">Scopri la mossa migliore</string>
+  <string name="hideBestMove">Nascondi la mossa migliore</string>
+  <string name="getAHint">Ottieni un suggerimento</string>
+  <string name="evaluatingYourMove">Valutando la tua mossa...</string>
+  <string name="whiteWinsGame">Il Bianco vince</string>
+  <string name="blackWinsGame">Il Nero vince</string>
+  <string name="learnFromYourMistakes">Impara dagli errori</string>
+  <string name="learnFromThisMistake">Impara da questo errore</string>
+  <string name="skipThisMove">Salta questa mossa</string>
+  <string name="next">Successivo</string>
+  <string name="xWasPlayed">Ultima mossa %s</string>
+  <string name="findBetterMoveForWhite">Trova una mossa migliore per il Bianco</string>
+  <string name="findBetterMoveForBlack">Trova una mossa migliore per il Nero</string>
+  <string name="resumeLearning">Continua ad imparare</string>
+  <string name="youCanDoBetter">Puoi fare di meglio</string>
+  <string name="tryAnotherMoveForWhite">Prova un\'altra mossa per il bianco</string>
+  <string name="tryAnotherMoveForBlack">Prova un\'altra mossa per il nero</string>
+  <string name="solution">Soluzione</string>
+  <string name="waitingForAnalysis">In attesa dell\'analisi</string>
+  <string name="noMistakesFoundForWhite">Nessun errore trovato per il bianco</string>
+  <string name="noMistakesFoundForBlack">Nessun errore trovato per il nero</string>
+  <string name="doneReviewingWhiteMistakes">Hai finito di rivedere gli errori del Bianco</string>
+  <string name="doneReviewingBlackMistakes">Hai finito di rivedere gli errori del Nero</string>
+  <string name="doItAgain">Rifallo</string>
+  <string name="reviewWhiteMistakes">Revisiona gli errori del Bianco</string>
+  <string name="reviewBlackMistakes">Revisiona gli errori del Nero</string>
+  <string name="advantage">Vantaggio</string>
+  <plurals name="nbSeconds">
+    <item quantity="one">%s secondo</item>
+    <item quantity="other">%s secondi</item>
+  </plurals>
+  <string name="opening">Apertura</string>
+  <string name="middlegame">Mediogioco</string>
+  <string name="endgame">Finale</string>
+  <string name="registerToSendChallenges">Per favore, registrati per mandare sfide.</string>
+  <string name="youCannotChallengeX">Non puoi sfidare %s.</string>
+  <string name="xDoesNotAcceptChallenges">%s non accetta sfide.</string>
+  <string name="yourXRatingIsTooFarFromY">Il tuo %1$s rating è troppo diverso da %2$s.</string>
+  <string name="cannotChallengeDueToProvisionalXRating">Non puoi sfidare poichè hai ancora un %s rating provvisorio.</string>
+  <string name="xOnlyAcceptsChallengesFromFriends">%s accetta solo sfide da amici.</string>
+  <string name="conditionalPremoves">Premosse condizionali</string>
+  <string name="addCurrentVariation">Aggiungi variazione corrente</string>
+  <string name="playVariationToCreateConditionalPremoves">Gioca una variazione per creare premosse condizionali</string>
+  <string name="noConditionalPremoves">Nessuna premossa condizionale</string>
+  <string name="playX">Gioca %s</string>
+  <plurals name="andSaveNbPremoveLines">
+    <item quantity="one">e salva %s linea pre-mossa</item>
+    <item quantity="other">e salva %s linee pre-mossa</item>
+  </plurals>
 </resources>

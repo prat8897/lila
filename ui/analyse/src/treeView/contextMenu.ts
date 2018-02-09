@@ -67,9 +67,9 @@ function view(opts: Opts, coords: Coords): VNode {
     }
   }, [
     h('p.title', nodeFullName(node)),
-    onMainline ? null : action('S', 'Promote variation', () => ctrl.promote(opts.path, false)),
-    onMainline ? null : action('E', 'Make main line', () => ctrl.promote(opts.path, true)),
-    action('q', 'Delete from here', () => ctrl.deleteNode(opts.path))
+    onMainline ? null : action('S', ctrl.trans.noarg('promoteVariation'), () => ctrl.promote(opts.path, false)),
+    onMainline ? null : action('E', ctrl.trans.noarg('makeMainLine'), () => ctrl.promote(opts.path, true)),
+    action('q', ctrl.trans.noarg('deleteFromHere'), () => ctrl.deleteNode(opts.path))
   ].concat(
     ctrl.study ? studyView.contextMenu(ctrl.study, opts.path, node) : []
   ));
@@ -78,7 +78,8 @@ function view(opts: Opts, coords: Coords): VNode {
 export default function(e: MouseEvent, opts: Opts): void {
   const el = $('#' + elementId)[0] || $('<div id="' + elementId + '">').appendTo($('body'))[0];
   opts.root.contextMenuPath = opts.path;
-  function close() {
+  function close(e: MouseEvent) {
+    if (e.button === 2) return; // right click
     opts.root.contextMenuPath = undefined;
     document.removeEventListener('click', close, false);
     $('#' + elementId).removeClass('visible');

@@ -46,6 +46,8 @@ final class PerfsUpdater(
               updateRatings(ratingsW.bullet, ratingsB.bullet, result, system)
             case Speed.Blitz =>
               updateRatings(ratingsW.blitz, ratingsB.blitz, result, system)
+            case Speed.Rapid =>
+              updateRatings(ratingsW.rapid, ratingsB.rapid, result, system)
             case Speed.Classical =>
               updateRatings(ratingsW.classical, ratingsB.classical, result, system)
             case Speed.Correspondence =>
@@ -67,8 +69,8 @@ final class PerfsUpdater(
           UserRepo.setPerfs(black, perfsB, black.perfs) zip
           historyApi.add(white, game, perfsW) zip
           historyApi.add(black, game, perfsB) zip
-          rankingApi.save(white.id, game.perfType, perfsW) zip
-          rankingApi.save(black.id, game.perfType, perfsB) inject ratingDiffs.some
+          (if (!white.rankban) rankingApi.save(white.id, game.perfType, perfsW) else funit) zip
+          (if (!black.rankban) rankingApi.save(black.id, game.perfType, perfsB) else funit) inject ratingDiffs.some
       }
     }
 
@@ -84,6 +86,7 @@ final class PerfsUpdater(
       ultraBullet: Rating,
       bullet: Rating,
       blitz: Rating,
+      rapid: Rating,
       classical: Rating,
       correspondence: Rating
   )
@@ -100,6 +103,7 @@ final class PerfsUpdater(
     ultraBullet = perfs.ultraBullet.toRating,
     bullet = perfs.bullet.toRating,
     blitz = perfs.blitz.toRating,
+    rapid = perfs.rapid.toRating,
     classical = perfs.classical.toRating,
     correspondence = perfs.correspondence.toRating
   )
@@ -143,6 +147,7 @@ final class PerfsUpdater(
       ultraBullet = addRatingIf(isStd && speed == Speed.UltraBullet, perfs.ultraBullet, ratings.ultraBullet),
       bullet = addRatingIf(isStd && speed == Speed.Bullet, perfs.bullet, ratings.bullet),
       blitz = addRatingIf(isStd && speed == Speed.Blitz, perfs.blitz, ratings.blitz),
+      rapid = addRatingIf(isStd && speed == Speed.Rapid, perfs.rapid, ratings.rapid),
       classical = addRatingIf(isStd && speed == Speed.Classical, perfs.classical, ratings.classical),
       correspondence = addRatingIf(isStd && speed == Speed.Correspondence, perfs.correspondence, ratings.correspondence)
     )

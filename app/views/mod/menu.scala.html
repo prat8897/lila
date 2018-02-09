@@ -15,9 +15,6 @@
 @if(isGranted(_.SetEmail)) {
 <a class="@active.active("email")" href="@routes.Mod.emailConfirm">Email confirm</a>
 }
-@if(isGranted(_.StreamConfig)) {
-<a class="@active.active("stream")" href="@routes.Tv.streamConfig">Streams</a>
-}
 @if(isGranted(_.PracticeConfig)) {
 <a class="@active.active("practice")" href="@routes.Practice.config">Practice</a>
 }
@@ -38,8 +35,8 @@
   Chat Panic <strong>@if(isChatPanicEnabled){ON}else{OFF}</strong>
 </a>
 }
-@if(isGranted(_.AssetVersion)) {
-<a class="@active.active("asset")" href="@routes.Dev.assetVersion">Asset version @ctx.pageData.assetVersion</a>
+@if(isGranted(_.Settings)) {
+<a class="@active.active("setting")" href="@routes.Dev.settings">Settings</a>
 }
 @if(isGranted(_.Cli)) {
 <a class="@active.active("cli")" href="@routes.Dev.cli">CLI</a>

@@ -1,5 +1,6 @@
 import { Player, Status, Source } from 'game';
 import * as cg from 'chessground/types';
+import { ForecastData } from './forecast/interfaces';
 import { StudyPracticeData, Goal as PracticeGoal } from './study/practice/interfaces';
 import { RelayData } from './study/relay/interfaces';
 
@@ -19,14 +20,18 @@ export interface AnalyseData {
   takebackable: boolean;
   analysis?: Analysis;
   userAnalysis: boolean;
-  forecast?: any;
+  forecast?: ForecastData;
   treeParts: Tree.Node[];
   evalPut?: boolean;
   practiceGoal?: PracticeGoal;
   pref: any;
 }
-export interface AnalyseDataWithTree extends AnalyseData {
+
+export interface ServerEvalData {
+  ch: string;
+  analysis?: Analysis;
   tree: Tree.Node;
+  division?: Division;
 }
 
 // similar, but not identical, to game/Game
@@ -35,7 +40,6 @@ export interface Game {
   status: Status;
   player: Color;
   turns: number;
-  startedAtTurn: number;
   source: Source;
   speed: Speed;
   variant: Variant;
@@ -62,6 +66,7 @@ export interface Division {
 export interface Analysis {
   white: AnalysisSide;
   black: AnalysisSide;
+  partial: boolean;
 }
 
 export interface AnalysisSide {
@@ -84,7 +89,6 @@ export interface AnalyseOpts {
   study?: any;
   tagTypes?: string;
   practice?: StudyPracticeData;
-  onChange?: (fen: Fen, path: Tree.Path, mainlinePly: Ply | false) => void;
   onToggleComputer?: (v: boolean) => void;
   relay?: RelayData;
 }
@@ -99,3 +103,5 @@ export interface JustCaptured extends cg.Piece {
 
 export type Conceal = boolean | 'conceal' | 'hide' | null;
 export type ConcealOf = (isMainline: boolean) => (path: Tree.Path, node: Tree.Node) => Conceal;
+
+export type Redraw = () => void;

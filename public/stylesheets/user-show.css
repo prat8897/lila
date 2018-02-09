@@ -106,6 +106,10 @@
 .user_show .trophy.icon3d:not(.patron):hover {
   transform: translateY(-3px);
 }
+.user_show .trophy.streaming {
+  color: #d59120!important;
+  animation: fire 1.25s ease-in-out infinite alternate;
+}
 .user_show .trophy.patron {
   font-size: 60px;
   margin: -30px 10px 0 25px!important;
@@ -127,6 +131,19 @@
 .user_show .trophy.patron.hint--left:hover:after {
   transform: scale(-1, 1), translateX(8px);
 }
+.user_show .shield_trophy {
+  width: 50px;
+  height: 60px;
+  background: url(../images/trophy/shield-gold.png) no-repeat;
+  background-size: contain;
+  font-family: "lichess" !important;
+  font-size: 30px;
+  line-height: 60px;
+  text-align: center;
+  color: #333!important;
+  text-shadow: 0 0 6px #fff;
+}
+
 .user_show .honorific {
   display: inline-block;
   margin-top: 1em;

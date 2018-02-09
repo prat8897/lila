@@ -89,6 +89,9 @@ final class ChapterRepo(coll: Coll) {
   def setClock(chapter: Chapter, path: Path, clock: Option[chess.Centis]): Funit =
     setNodeValue(chapter, path, "l", clock)
 
+  def setScore(chapter: Chapter, path: Path, score: Option[lila.tree.Eval.Score]): Funit =
+    setNodeValue(chapter, path, "e", score)
+
   def setChildren(chapter: Chapter, path: Path, children: Node.Children): Funit =
     setNodeValue(chapter, path, "n", children.some)
 
@@ -110,6 +113,16 @@ final class ChapterRepo(coll: Coll) {
       s"root.n.${indexes.mkString(".n.")}.$subField"
     }
 
+  private[study] def setChild(chapter: Chapter, path: Path, child: Node): Funit =
+    pathToField(chapter, path, "n") ?? { parentChildrenPath =>
+      coll.update(
+        $id(chapter.id) ++ $doc(s"$parentChildrenPath.i" -> child.id),
+        $set(s"$parentChildrenPath.$$" -> child)
+      ) flatMap { res =>
+          (res.n == 0) ?? coll.update($id(chapter.id), $push(parentChildrenPath -> child)).void
+        }
+    }
+
   private[study] def idNamesByStudyIds(studyIds: Seq[Study.Id]): Fu[Map[Study.Id, Vector[Chapter.IdName]]] =
     coll.find(
       $doc("studyId" $in studyIds),
@@ -129,6 +142,15 @@ final class ChapterRepo(coll: Coll) {
           } | hash
         }
       }
+
+  def startServerEval(chapter: Chapter) =
+    coll.updateField($id(chapter.id), "serverEval", Chapter.ServerEval(
+      path = chapter.root.mainlinePath,
+      done = false
+    )).void
+
+  def completeServerEval(chapter: Chapter) =
+    coll.updateField($id(chapter.id), "serverEval.done", true).void
 
   def countByStudyId(studyId: Study.Id): Fu[Int] =
     coll.countSel($studyId(studyId))

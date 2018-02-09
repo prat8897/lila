@@ -1,9 +1,7 @@
 package lila.study
 
-import org.joda.time.DateTime
-import scala.util.Try
-
 import chess.format.pgn.{ Parser, ParsedPgn, Tag }
+import chess.format.FEN
 import lila.common.LightUser
 import lila.game.{ Game, Namer }
 import lila.tree.Node.Comment
@@ -23,7 +21,10 @@ private final class ExplorerGame(
     }
 
   def insert(userId: User.ID, study: Study, position: Position, gameId: Game.ID): Fu[Option[(Chapter, Path)]] =
-    importer(gameId) map {
+    if (position.chapter.isOverweight) {
+      logger.info(s"Overweight chapter ${study.id}/${position.chapter.id}")
+      fuccess(none)
+    } else importer(gameId) map {
       _ ?? { game =>
         position.node ?? { fromNode =>
           GameToRoot(game, none, false).|> { root =>
@@ -40,8 +41,11 @@ private final class ExplorerGame(
       }
     }
 
+  private def truncateFen(f: FEN) = f.value split ' ' take 4 mkString " "
+  private def compareFens(a: FEN, b: FEN) = truncateFen(a) == truncateFen(b)
+
   private def merge(fromNode: RootOrNode, fromPath: Path, game: Node.Root): Option[(Node, Path)] = {
-    val gameNodes = game.mainline.dropWhile(_.fen != fromNode.fen) drop 1
+    val gameNodes = game.mainline.dropWhile(n => !compareFens(n.fen, fromNode.fen)) drop 1
     val (path, foundGameNode) = gameNodes.foldLeft((Path.root, none[Node])) {
       case ((path, None), gameNode) =>
         val nextPath = path + gameNode
@@ -62,21 +66,17 @@ private final class ExplorerGame(
 
   private def gameUrl(game: Game) = s"$baseUrl/${game.id}"
 
-  private def gameYear(pgn: Option[ParsedPgn], g: Game): Int =
-    pgn.flatMap(_.tags.anyDate).flatMap { pgnDate =>
-      Try(DateTime.parse(pgnDate, Tag.UTCDate.format)).toOption map (_.getYear)
-    } | g.createdAt.getYear
-
   private def gameTitle(g: Game): String = {
     val pgn = g.pgnImport.flatMap(pgnImport => Parser.full(pgnImport.pgn).toOption)
     val white = pgn.flatMap(_.tags(_.White)) | Namer.playerText(g.whitePlayer)(lightUser)
     val black = pgn.flatMap(_.tags(_.Black)) | Namer.playerText(g.blackPlayer)(lightUser)
     val result = chess.Color.showResult(g.winnerColor)
-    val event: String = {
-      val raw = pgn.flatMap(_.tags(_.Event))
-      val year = gameYear(pgn, g).toString
-      raw.find(_ contains year) | raw.fold(year)(e => s"$e, $year")
-    }
-    s"$white - $black, $result, $event"
+    val event: Option[String] =
+      (pgn.flatMap(_.tags(_.Event)), pgn.flatMap(_.tags.year).map(_.toString)) match {
+        case (Some(event), Some(year)) if event.contains(year) => event.some
+        case (Some(event), Some(year)) => s"$event, $year".some
+        case (eventO, yearO) => eventO orElse yearO
+      }
+    s"$white - $black, $result, ${event | "-"}"
   }
 }

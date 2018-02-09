@@ -1,8 +1,8 @@
 import * as xhr from '../studyXhr';
-import { prop } from 'common';
+import { prop, storedProp } from 'common';
 import makeSuccess from './studyPracticeSuccess';
 import makeSound from './sound';
-import { readOnlyProp, enrichText } from '../../util';
+import { readOnlyProp } from '../../util';
 import { StudyPracticeData, Goal, StudyPracticeCtrl } from './interfaces';
 import { StudyData } from '../interfaces';
 import AnalyseCtrl from '../../ctrl';
@@ -15,13 +15,13 @@ export default function(root: AnalyseCtrl, studyData: StudyData, data: StudyPrac
   // null = ongoing, true = win, false = fail
   success = prop<boolean | null>(null),
   sound = makeSound(),
-  analysisUrl = prop('');
+  analysisUrl = prop(''),
+  autoNext = storedProp('practice-auto-next', true);
 
-  function makeComment(treeRoot: Tree.Node): string | undefined {
+  function makeComment(treeRoot: Tree.Node) {
     if (!treeRoot.comments) return;
-    const c = enrichText(treeRoot.comments[0].text, false);
+    comment(treeRoot.comments[0].text);
     delete treeRoot.comments;
-    comment(c);
   }
 
   function onLoad() {
@@ -60,8 +60,12 @@ export default function(root: AnalyseCtrl, studyData: StudyData, data: StudyPrac
       xhr.practiceComplete(chapterId, nbMoves());
     }
     sound.success();
+    if (autoNext()) setTimeout(goToNext, 1000);
+  }
+
+  function goToNext() {
     const next = root.study!.nextChapter();
-    if (next) setTimeout(() => root.study!.setChapter(next.id), 1000);
+    if (next) root.study!.setChapter(next.id);
   }
 
   function onFailure(): void {
@@ -92,6 +96,8 @@ export default function(root: AnalyseCtrl, studyData: StudyData, data: StudyPrac
       onLoad();
     },
     isWhite: root.bottomIsWhite,
-    analysisUrl
+    analysisUrl,
+    autoNext,
+    goToNext
   };
 }

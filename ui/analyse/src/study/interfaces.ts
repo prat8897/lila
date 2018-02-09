@@ -1,11 +1,13 @@
 import { Prop } from 'common';
 import { NotifCtrl } from './notif';
-import { AnalyseData } from '../interfaces';
+import { AnalyseData, Redraw } from '../interfaces';
 import { StudyPracticeCtrl } from './practice/interfaces';
 import { ChapterDescriptionCtrl } from './chapterDescription';
 import GamebookPlayCtrl from './gamebook/gamebookPlayCtrl';
 import { GamebookOverride } from './gamebook/interfaces';
+import { GlyphCtrl } from './studyGlyph';
 import RelayCtrl from './relay/relayCtrl';
+import { ServerEvalCtrl } from './serverEval';
 
 export interface StudyCtrl {
   data: StudyData;
@@ -18,7 +20,8 @@ export interface StudyCtrl {
   chapters: any;
   notif: NotifCtrl;
   commentForm: any;
-  glyphForm: any;
+  glyphForm: GlyphCtrl;
+  serverEval: ServerEvalCtrl;
   share: any;
   tags: any;
   desc: ChapterDescriptionCtrl;
@@ -28,7 +31,7 @@ export interface StudyCtrl {
   canJumpTo(path: Tree.Path): boolean;
   onJump(): void;
   withPosition(obj: any): any;
-  setPath(path: Tree.Path, node: Tree.Node): void;
+  setPath(path: Tree.Path, node: Tree.Node, playedMyself: boolean): void;
   deleteNode(path: Tree.Path): void;
   promote(path: Tree.Path, toMainline: boolean): void;
   setChapter(id: string, force?: boolean): void;
@@ -46,16 +49,19 @@ export interface StudyCtrl {
   isUpdatedRecently(): boolean;
   setGamebookOverride(o: GamebookOverride): void;
   explorerGame(gameId: string, insert: boolean): void;
-  redraw(): void;
+  redraw: Redraw;
+  trans: Trans;
 }
 
 export type Tab = 'members' | 'chapters';
+export type ToolTab = 'tags' | 'comments' | 'glyphs' | 'serverEval' | 'share';
 
 export interface StudyVm {
   loading: boolean;
   nextChapterId?: string;
   justSetChapterId?: string;
   tab: Prop<Tab>;
+  toolTab: Prop<ToolTab>;
   chapterId: string;
   mode: {
     sticky: boolean;

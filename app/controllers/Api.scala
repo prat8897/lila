@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 import lila.api.Context
 import lila.app._
 import lila.common.PimpedJson._
-import lila.common.{ HTTPRequest, IpAddress }
+import lila.common.{ HTTPRequest, IpAddress, MaxPerPage }
 
 object Api extends LilaController {
 
@@ -36,7 +36,7 @@ object Api extends LilaController {
 
   val status = Action { req =>
     val appVersion = get("v", req)
-    lila.mon.mobile.version(appVersion | "none")
+    lila.mon.mobile.version(appVersion | "none")()
     val mustUpgrade = appVersion exists lila.api.Mobile.AppVersion.mustUpgrade _
     Ok(apiStatusJson.add("mustUpgrade", mustUpgrade)) as JSON
   }
@@ -69,7 +69,7 @@ object Api extends LilaController {
         lila.mon.api.teamUsers.cost(cost)
         (get("team") ?? Env.team.api.team).flatMap {
           _ ?? { team =>
-            Env.team.pager(team, page, nb) map userApi.pager map some
+            Env.team.pager(team, page, MaxPerPage(nb)) map userApi.pager map some
           }
         } map toApiResult
       }
@@ -163,7 +163,7 @@ object Api extends LilaController {
             playing = getBoolOpt("playing"),
             analysed = getBoolOpt("analysed"),
             withFlags = gameFlagsFromRequest,
-            nb = nb,
+            nb = MaxPerPage(nb),
             page = page
           ) map some
         }
@@ -216,7 +216,7 @@ object Api extends LilaController {
             playing = getBoolOpt("playing"),
             analysed = getBoolOpt("analysed"),
             withFlags = gameFlagsFromRequest,
-            nb = nb,
+            nb = MaxPerPage(nb),
             page = page
           ) map some
         }
@@ -246,7 +246,7 @@ object Api extends LilaController {
               analysed = getBoolOpt("analysed"),
               withFlags = gameFlagsFromRequest,
               since = DateTime.now minusYears 1,
-              nb = nb,
+              nb = MaxPerPage(nb),
               page = page
             ) map some map toApiResult
           }
@@ -295,7 +295,7 @@ object Api extends LilaController {
   def toApiResult(json: Option[JsValue]): ApiResult = json.fold[ApiResult](NoData)(Data.apply)
   def toApiResult(json: Seq[JsValue]): ApiResult = Data(JsArray(json))
 
-  private def ApiRequest(js: Context => Fu[ApiResult]) = Open { implicit ctx =>
+  def ApiRequest(js: Context => Fu[ApiResult]) = Open { implicit ctx =>
     js(ctx) map toHttp
   }
 

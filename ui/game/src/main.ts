@@ -1,5 +1,3 @@
-/// <reference types="types/lichess" />
-
 import { GameData, GameView, Player, Status, Source, Simul } from './interfaces';
 
 import * as game from './game';
@@ -18,6 +16,7 @@ export const perf = {
     ultraBullet: "{",
     bullet: "T",
     blitz: ")",
+    rapid: "C",
     classical: "+",
     correspondence: ";",
     chess960: "'",

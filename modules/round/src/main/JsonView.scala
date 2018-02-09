@@ -11,7 +11,7 @@ import lila.game.{ Pov, Game, Player => GamePlayer }
 import lila.pref.Pref
 import lila.user.{ User, UserRepo }
 
-import chess.format.Forsyth
+import chess.format.{ Forsyth, FEN }
 import chess.{ Color, Clock }
 
 import actorApi.SocketStatus
@@ -30,7 +30,7 @@ final class JsonView(
   import JsonView._
 
   private def checkCount(game: Game, color: Color) =
-    (game.variant == chess.variant.ThreeCheck) option game.checkCount(color)
+    (game.variant == chess.variant.ThreeCheck) option game.history.checkCount(color)
 
   private def commonPlayerJson(g: Game, p: GamePlayer, user: Option[User], withFlags: WithFlags): JsObject =
     Json.obj(
@@ -52,7 +52,7 @@ final class JsonView(
     pref: Pref,
     apiVersion: ApiVersion,
     playerUser: Option[User],
-    initialFen: Option[String],
+    initialFen: Option[FEN],
     withFlags: WithFlags
   ): Fu[JsObject] =
     getSocketStatus(pov.game.id) zip
@@ -110,7 +110,7 @@ final class JsonView(
           ).add("clock" -> game.clock.map(clockJson))
             .add("correspondence" -> game.correspondenceClock)
             .add("takebackable" -> takebackable)
-            .add("crazyhouse" -> pov.game.crazyData)
+            .add("crazyhouse" -> pov.game.board.crazyData)
             .add("possibleMoves" -> possibleMoves(pov))
             .add("possibleDrops" -> possibleDrops(pov))
             .add("expiration" -> game.expirable.option {
@@ -141,7 +141,7 @@ final class JsonView(
     apiVersion: ApiVersion,
     me: Option[User],
     tv: Option[OnTv],
-    initialFen: Option[String] = None,
+    initialFen: Option[FEN] = None,
     withFlags: WithFlags
   ) =
     getSocketStatus(pov.game.id) zip
@@ -177,6 +177,7 @@ final class JsonView(
               .add("clockBar" -> pref.clockBar)
               .add("highlight" -> (pref.highlight || pref.isBlindfold))
               .add("destination" -> (pref.destination && !pref.isBlindfold))
+              .add("rookCastle" -> (pref.rookCastle == Pref.RookCastle.YES))
               .add("showCaptured" -> pref.captured),
             "evalPut" -> JsBoolean(me.??(evalCache.shouldPut))
           ).add("evalPut" -> me.??(evalCache.shouldPut))
@@ -196,24 +197,25 @@ final class JsonView(
   def userAnalysisJson(
     pov: Pov,
     pref: Pref,
-    initialFen: Option[String],
+    initialFen: Option[FEN],
     orientation: chess.Color,
     owner: Boolean,
-    me: Option[User]
+    me: Option[User],
+    division: Option[chess.Division] = none
   ) = {
     import pov._
-    val fen = Forsyth >> game.toChess
+    val fen = Forsyth >> game.chess
     Json.obj(
       "game" -> Json.obj(
         "id" -> gameId,
         "variant" -> game.variant,
         "opening" -> game.opening,
-        "initialFen" -> (initialFen | game.variant.initialFen),
+        "initialFen" -> initialFen.fold(chess.format.Forsyth.initial)(_.value),
         "fen" -> fen,
         "turns" -> game.turns,
         "player" -> game.turnColor.name,
         "status" -> game.status
-      ),
+      ).add("division", division),
       "player" -> Json.obj(
         "id" -> owner.option(pov.playerId),
         "color" -> color.name
@@ -254,13 +256,13 @@ final class JsonView(
 
   private def possibleMoves(pov: Pov): Option[Map[String, String]] =
     (pov.game playableBy pov.player) option {
-      pov.game.toChess.situation.destinations map {
+      pov.game.situation.destinations map {
         case (from, dests) => from.key -> dests.mkString
       }
     }
 
   private def possibleDrops(pov: Pov): Option[JsValue] = (pov.game playableBy pov.player) ?? {
-    pov.game.toChess.situation.drops map { drops =>
+    pov.game.situation.drops map { drops =>
       JsString(drops.map(_.key).mkString)
     }
   }

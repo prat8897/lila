@@ -9,7 +9,6 @@ underchat: Option[Html] = None,
 robots: Boolean = isGloballyCrawlable,
 moreCss: Html = Html(""),
 moreJs: Html = Html(""),
-zen: Boolean = false,
 playing: Boolean = false,
 openGraph: Option[lila.app.ui.OpenGraph] = None,
 atom: Option[Html] = None,
@@ -45,9 +44,10 @@ asyncJs: Boolean = false)(body: Html)(implicit ctx: Context)
     @if(ctx.pref.coords == 1) { @cssTag("board.coords.inner.css") }
     @if(ctx.pageData.inquiry.isDefined) { @cssTag("inquiry.css") }
     @if(ctx.userContext.impersonatedBy.isDefined) { @cssTag("impersonate.css") }
+    @if(isStage) { @cssTag("stage.css") }
     @moreCss
     <link id="piece-sprite" href="@staticUrl(s"stylesheets/piece/${ctx.currentPieceSet}.css?v=${ctx.pageData.assetVersion}")" type="text/css" rel="stylesheet"/>
-    <meta content="@openGraph.fold(trans.siteDescription())(o => escapeHtml(o.description))" name="description">
+    <meta content="@openGraph.fold(trans.siteDescription.txt())(o => o.description)" name="description">
     <link id="favicon" rel="shortcut icon" href="@staticUrl("images/favicon-32-white.png")" type="image/x-icon" />
     @if(!robots) {
     <meta content="noindex, nofollow" name="robots">
@@ -61,7 +61,7 @@ asyncJs: Boolean = false)(body: Html)(implicit ctx: Context)
     @ctx.transpBgImg.map { img =>
     <style type="text/css" id="bg-data">body.transp::before{background-image:url('@img');}</style>
     }
-    <link rel="preload" href="@staticUrl("font75/fonts/lichess.woff")" as="font" type="font/woff" crossorigin/>
+    <link rel="preload" href="@staticUrl("font80/fonts/lichess.woff")" as="font" type="font/woff" crossorigin/>
     <meta name="twitter:site" content="@@lichess" />
   </head>
   <body class="preload base @List(
@@ -93,6 +93,10 @@ asyncJs: Boolean = false)(body: Html)(implicit ctx: Context)
     @ctx.me.map { me =>
     @if(ctx.userContext.impersonatedBy.isDefined) { @mod.impersonate(me) }
     }
+    @if(isStage) {
+    <div id="stage">This is an empty lichess preview website for developers. <a href="https://lichess.org">Go to lichess.org instead</a></div>
+    }
+    @if(playing) { <a data-icon="E" id="zentog" class="text fbt active@if(!ctx.pref.isZen){ none}">ZEN MODE</a> }
     <div id="top" class="@ctx.pref.is3d.fold("is3d", "is2d")">
       @topmenu()
       <div id="ham-plate" class="link hint--bottom" data-hint="@trans.menu()">
@@ -120,6 +124,7 @@ asyncJs: Boolean = false)(body: Html)(implicit ctx: Context)
         <div id="notify_app" class="dropdown"></div>
       </div>
       }.getOrElse {
+      @if(!ctx.pageData.error) {
       <div class="dasher">
         <a class="toggle anon">
           <span class="hint--bottom-left" data-hint="@trans.preferences()">
@@ -130,7 +135,7 @@ asyncJs: Boolean = false)(body: Html)(implicit ctx: Context)
       </div>
       <a href="@routes.Auth.login?referrer=@currentPath" class="signin button text">@trans.signIn()</a>
       }
-      @if(!zen) {
+      }
       @if(ctx.teamNbRequests > 0) {
       <a class="link data-count" href="@routes.Team.requests()" data-count="@ctx.teamNbRequests">
         <span class="hint--bottom-left" data-hint="@trans.teams()">
@@ -139,10 +144,9 @@ asyncJs: Boolean = false)(body: Html)(implicit ctx: Context)
       </a>
       }
       @if(isGranted(_.SeeReport)) {
-      <a class="link text data-count" href="@routes.Report.list" data-count="@reportNbUnprocessed" data-icon=""></a>
+      <a class="link text data-count" href="@routes.Report.list" data-count="@reportNbOpen" data-icon=""></a>
       }
       <div id="clinput"><a class="link"><span data-icon="y"></span></a><input spellcheck="false" placeholder="@trans.search()"/></div>
-      }
       <a id="reconnecting" class="link text" onclick="window.location.reload()" data-icon="B">@trans.reconnecting()</a>
     </div>
     <div class="content @ctx.pref.is3d.fold("is3d", "is2d")">
@@ -153,8 +157,8 @@ asyncJs: Boolean = false)(body: Html)(implicit ctx: Context)
             <a id="site_title" href="@routes.Lobby.home">@if(ctx.kid){<span title="@trans.kidMode()" class="kiddo">😊</span>}lichess<span class="extension">.org</span></a>
           </h1>
           @baseline
-          @menu.map { side =>
-          <div class="side_menu">@side</div>
+          @menu.map { sideMenu =>
+          <div class="side_menu">@sideMenu</div>
           }
           @side
           @chat

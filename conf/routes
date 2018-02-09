@@ -22,10 +22,8 @@ POST  /games/export/:user              controllers.Game.exportConfirm(user: Stri
 GET   /tv                              controllers.Tv.index
 GET   /tv/embed                        controllers.Tv.embed
 GET   /tv/frame                        controllers.Tv.frame
-GET   /tv/stream/config                controllers.Tv.streamConfig
-POST  /tv/stream/config                controllers.Tv.streamConfigSave
-GET   /tv/stream/:id                   controllers.Tv.streamIn(id: String)
 GET   /tv/feed                         controllers.Tv.feed
+GET   /tv/channels                     controllers.Tv.channels
 GET   /tv/:chanKey                     controllers.Tv.onChannel(chanKey: String)
 GET   /tv/:chanKey/$gameId<\w{8}>/$color<white|black>/sides controllers.Tv.sides(chanKey: String, gameId: String, color: String)
 GET   /games                           controllers.Tv.games
@@ -108,6 +106,8 @@ GET   /training/frame                  controllers.Puzzle.frame
 GET   /training/api/game.pgn           controllers.Puzzle.recentGame
 POST  /training/api/puzzle             controllers.Puzzle.importOne
 GET   /training/export/png/:id.png     controllers.Export.puzzlePng(id: Int)
+GET   /training/batch                  controllers.Puzzle.batchSelect
+POST  /training/batch                  controllers.Puzzle.batchSolve
 GET   /training/:id                    controllers.Puzzle.show(id: Int)
 GET   /training/:id/load               controllers.Puzzle.load(id: Int)
 POST  /training/:id/vote               controllers.Puzzle.vote(id: Int)
@@ -188,6 +188,17 @@ GET   /practice/:sectionId/:studySlug/:studyId    controllers.Practice.show(sect
 GET   /practice/:sectionId/:studySlug/:studyId/:chapterId controllers.Practice.showChapter(sectionId: String, studySlug: String, studyId: String, chapterId: String)
 POST  /practice/complete/:chapterId/:moves        controllers.Practice.complete(chapterId: String, moves: Int)
 
+# Streamer
+GET   /streamer                        controllers.Streamer.index(page: Int ?= 1)
+GET   /streamer/edit                   controllers.Streamer.edit
+POST  /streamer/new                    controllers.Streamer.create
+POST  /streamer/edit                   controllers.Streamer.editApply
+POST  /streamer/approval/request       controllers.Streamer.approvalRequest
+GET   /streamer/picture/edit           controllers.Streamer.picture
+POST  /streamer/picture/upload         controllers.Streamer.pictureApply
+POST  /streamer/picture/delete         controllers.Streamer.pictureDelete
+GET   /streamer/:username              controllers.Streamer.show(username: String)
+
 # Round
 GET   /$gameId<\w{8}>                            controllers.Round.watcher(gameId: String, color: String = "white")
 GET   /$gameId<\w{8}>/$color<white|black>        controllers.Round.watcher(gameId: String, color: String)
@@ -224,10 +235,13 @@ GET   /$gameId<\w{8}>/$color<white|black>/text   controllers.Round.watcherText(g
 
 # Tournament
 GET   /tournament                             controllers.Tournament.home(page: Int ?= 1)
+GET   /tournament/featured                    controllers.Tournament.featured
 GET   /tournament/new                         controllers.Tournament.form
 POST  /tournament/new                         controllers.Tournament.create
+GET   /tournament/calendar                    controllers.Tournament.calendar
 GET   /tournament/$id<\w{8}>                  controllers.Tournament.show(id: String)
 GET   /tournament/$id<\w{8}>/standing/:page   controllers.Tournament.standing(id: String, page: Int)
+GET   /tournament/$id<\w{8}>/page-of/:userId  controllers.Tournament.pageOf(id: String, userId: String)
 GET   /tournament/$id<\w{8}>/socket/v:apiVersion controllers.Tournament.websocket(id: String, apiVersion: Int)
 POST  /tournament/$id<\w{8}>/join             controllers.Tournament.join(id: String)
 POST  /tournament/$id<\w{8}>/withdraw         controllers.Tournament.withdraw(id: String)
@@ -238,6 +252,7 @@ POST  /tournament/$id<\w{8}>/terminate        controllers.Tournament.terminate(i
 GET   /tournament/help                        controllers.Tournament.help(system: Option[String] ?= None)
 GET   /tournament/limited-invitation          controllers.Tournament.limitedInvitation
 GET   /tournament/leaderboard                 controllers.Tournament.leaderboard
+GET   /tournament/shields                     controllers.Tournament.shields
 
 # Tournament CRUD
 GET   /tournament/manager                     controllers.TournamentCrud.index
@@ -367,7 +382,7 @@ POST  /mod/:username/title             controllers.Mod.setTitle(username: String
 POST  /mod/:username/inquiry           controllers.Mod.spontaneousInquiry(username: String)
 GET   /mod/:username/communication     controllers.Mod.communicationPublic(username: String)
 GET   /mod/:username/communication/private controllers.Mod.communicationPrivate(username: String)
-POST  /mod/:username/kickFromRankings  controllers.Mod.kickFromRankings(username: String)
+POST  /mod/:username/rankban/:v        controllers.Mod.rankban(username: String, v: Boolean)
 POST  /mod/:username/reportban/:v      controllers.Mod.reportban(username: String, v: Boolean)
 POST  /mod/:username/impersonate       controllers.Mod.impersonate(username: String)
 GET   /mod/log                         controllers.Mod.log
@@ -390,7 +405,6 @@ POST  /mod/chat-panic                  controllers.Mod.chatPanicPost
 GET   /irwin                               controllers.Irwin.dashboard
 GET   /irwin/stream                        controllers.Irwin.eventStream
 POST  /irwin/report                        controllers.Irwin.saveReport
-GET   /irwin/request                       controllers.Irwin.getRequest
 GET   /irwin/:username/assessment          controllers.Irwin.assessment(username: String)
 GET   /irwin/users-mark-and-current-report controllers.Irwin.usersMarkAndCurrentReport(ids: String)
 
@@ -470,6 +484,7 @@ GET    /qa/:id/:slug/edit          controllers.QaQuestion.edit(id: Int, slug: St
 POST   /qa/:id/edit                controllers.QaQuestion.doEdit(id: Int)
 POST   /qa/:id/vote                controllers.QaQuestion.vote(id: Int)
 POST   /qa/:id/rm                  controllers.QaQuestion.remove(id: Int)
+POST   /qa/:id/lock                controllers.QaQuestion.lock(id: Int)
 POST   /qa/:id/answer              controllers.QaAnswer.create(id: Int)
 POST   /qa/:id/:a/vote             controllers.QaAnswer.vote(id: Int, a: Int)
 POST   /qa/:id/:a/accept           controllers.QaAnswer.accept(id: Int, a: Int)
@@ -517,11 +532,13 @@ GET   /mobile                          controllers.Main.mobile
 GET   /lag                             controllers.Main.lag
 GET   /fpmenu                          controllers.Main.fpmenu
 GET   /get-fishnet                     controllers.Main.getFishnet
-GET   /dev/asset-version               controllers.Dev.assetVersion
-POST  /dev/asset-version               controllers.Dev.assetVersionPost
+
+# Dev
 GET   /dev/cli                         controllers.Dev.cli
 POST  /dev/cli                         controllers.Dev.cliPost
 POST  /cli                             controllers.Dev.command
+GET   /dev/settings                    controllers.Dev.settings
+POST  /dev/settings/:id                controllers.Dev.settingsPost(id: String)
 
 # Mobile Push
 POST  /mobile/register/:platform/:deviceId controllers.Main.mobileRegister(platform: String, deviceId: String)
@@ -542,7 +559,6 @@ GET   /variant/:key                    controllers.Page.variant(key)
 # Help
 GET   /help/contribute                 controllers.Page.contribute
 GET   /help/master                     controllers.Page.master
-GET   /help/stream-on-lichess          controllers.Page.streamHowTo
 
 POST  /jslog/$id<\w{12}>               controllers.Main.jslog(id: String)
 POST  /jsmon/:event                    controllers.Main.jsmon(event: String)

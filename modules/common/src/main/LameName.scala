@@ -7,7 +7,11 @@ object LameName {
 
   def anyName(name: String) = lameWords.matcher(name).find
 
-  def anyNameButLichessIsOk(name: String) = lameWords.matcher(name.replace("lichess", "")).find
+  def anyNameButLichessIsOk(name: String) = lameWords.matcher {
+    lichessRegex.replaceAllIn(name, "")
+  }.find
+
+  private val lichessRegex = "(?i)lichess".r
 
   private val lameTitlePrefix =
     "[Ww]?[NCFIGl1L]M|(?i:w?[ncfigl1])m[-_A-Z0-9]".r.pattern
@@ -31,6 +35,7 @@ object LameName {
     List(
       "hitler",
       "fuck",
+      "fouck",
       "penis",
       "vagin",
       "anus",
@@ -41,7 +46,7 @@ object LameName {
       "cunt",
       "kunt",
       "douche",
-      "fagg",
+      "fag",
       "golam",
       "jerk",
       "nigg",

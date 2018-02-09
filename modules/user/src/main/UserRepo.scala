@@ -22,6 +22,8 @@ object UserRepo {
   private[user] val coll = Env.current.userColl
   import reactivemongo.api.collections.bson.BSONBatchCommands.AggregationFramework.{ Match, Group, SumField }
 
+  def withColl[A](f: Coll => A): A = f(coll)
+
   val normalize = User normalize _
 
   def topNbGame(nb: Int): Fu[List[User]] =
@@ -78,8 +80,7 @@ object UserRepo {
   def byIdsSortRating(ids: Iterable[ID], nb: Int): Fu[List[User]] =
     coll.find($inIds(ids) ++ goodLadSelectBson)
       .sort($sort desc "perfs.standard.gl.r")
-      .cursor[User](ReadPreference.secondaryPreferred)
-      .gather[List](nb)
+      .list[User](nb, ReadPreference.secondaryPreferred)
 
   // expensive, send to secondary
   def idsByIdsSortRating(ids: Iterable[ID], nb: Int): Fu[List[User.ID]] =
@@ -105,7 +106,7 @@ object UserRepo {
     coll.find(
       $inIds(List(u1, u2)),
       $doc(s"${F.count}.game" -> true)
-    ).cursor[Bdoc]().gather[List]() map { docs =>
+    ).list[Bdoc]() map { docs =>
         docs.sortBy {
           _.getAs[Bdoc](F.count).flatMap(_.getAs[BSONNumberLike]("game")).??(_.toInt)
         }.map(_.getAs[User.ID]("_id")).flatten match {
@@ -166,10 +167,11 @@ object UserRepo {
       $set(F.profile -> Profile.profileBSONHandler.write(profile))
     ).void
 
-  def setTitle(id: ID, title: Option[String]): Funit = title match {
-    case Some(t) => coll.updateField($id(id), F.title, t).void
-    case None => coll.update($id(id), $unset(F.title)).void
-  }
+  def addTitle(id: ID, title: String): Funit =
+    coll.updateField($id(id), F.title, title).void
+
+  def removeTitle(id: ID): Funit =
+    coll.unsetField($id(id), F.title).void
 
   def setPlayTime(id: ID, playTime: User.PlayTime): Funit =
     coll.update($id(id), $set(F.playTime -> User.playTimeHandler.write(playTime))).void
@@ -277,6 +279,8 @@ object UserRepo {
 
   def setReportban(id: ID, v: Boolean): Funit = coll.updateField($id(id), "reportban", v).void
 
+  def setRankban(id: ID, v: Boolean): Funit = coll.updateField($id(id), "rankban", v).void
+
   def setIpBan(id: ID, v: Boolean) = coll.updateField($id(id), "ipBan", v).void
 
   def toggleKid(user: User) = coll.updateField($id(user.id), "kid", !user.kid)
@@ -293,10 +297,10 @@ object UserRepo {
 
   def enable(id: ID) = coll.updateField($id(id), F.enabled, true)
 
-  def disable(user: User) = coll.update(
+  def disable(user: User, keepEmail: Boolean) = coll.update(
     $id(user.id),
     $set(F.enabled -> false) ++ {
-      if (user.lameOrTroll) $empty
+      if (keepEmail) $empty
       else $doc("$rename" -> $doc(F.email -> F.prevEmail))
     }
   )

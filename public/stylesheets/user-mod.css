@@ -74,6 +74,12 @@ body.dark .mod_zone .slist {
 .mod_zone .spy_uas {
   margin-left: 34%;
 }
+.mod_zone .spy_fps {
+  margin-left: 34%;
+}
+.mod_zone .spy_fps li {
+  font-family: monospace;
+}
 .mod_zone .listings .blocked {
   color: red;
   font-weight: bold;
@@ -246,19 +252,6 @@ body.dark .irwin header > * {
 .mod_zone .irwin header .infos {
   font-size: 0.9em;
 }
-.mod_zone .irwin header .rates {
-  width: 100%;
-  display: flex;
-  flex-flow: row;
-}
-.mod_zone .irwin header .rates div {
-  line-height: 1.2em;
-  margin: 5px 5px 0 5px;
-  flex: 1 1 100%;
-  display: flex;
-  flex-flow: column;
-  text-align: center;
-}
 .mod_zone .irwin header strong {
   display: block;
   font-size: 1.1em;
@@ -317,6 +310,28 @@ body.dark .irwin header > * {
 }
 .mod_zone .irwin .moves .red {
   background-color: #E73B38;
+}
+
+.mod_zone .reports .score {
+  display: inline-block;
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 0.9em;
+  padding: 0.1em 0.5em;
+  border-radius: 0.3em;
+}
+.mod_zone .reports .score.green {
+  /* actually blue */
+  background-color: rgba(32, 119, 192, 0.4);
+}
+.mod_zone .reports .score.yellow {
+  background-color: rgba(221, 207, 63, 0.4);
+}
+.mod_zone .reports .score.orange {
+  background-color: rgba(231, 155, 100, 0.4);
+}
+.mod_zone .reports .score.red {
+  background-color: rgba(231, 59, 56, 0.4);
 }
 
 th[role=columnheader]:not(.no-sort) {

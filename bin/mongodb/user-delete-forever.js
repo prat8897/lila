@@ -1,4 +1,4 @@
-var username = 'robert';
+var username = 'jamesflynn';
 var userId = username.toLowerCase();
 var user = db.user4.findOne({
   _id: userId
@@ -92,6 +92,16 @@ print(db.playban.remove({
 print('Delete perf stats');
 print(db.perf_stat.remove({
   _id: new RegExp('^' + userId + '/')
+}).nRemoved + ' done');
+
+print('Delete activity');
+print(db.activity.remove({
+  _id: new RegExp('^' + userId + ':')
+}).nRemoved + ' done');
+
+print('Delete assessments');
+print(db.player_assessment.remove({
+  userId: userId
 }).nRemoved + ' done');
 
 print('Delete user');

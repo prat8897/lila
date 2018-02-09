@@ -12,7 +12,7 @@
     }
     @userLink(u, withPowerTip = false)
   </div>
-  @if(u.engine && ctx.me.fold(true)(u !=)) {
+  @if(u.engine && ctx.me.fold(true)(u !=) && !isGranted(_.UserSpy)) {
   <div class="warning" data-icon="j">@trans.thisPlayerUsesChessComputerAssistance()</div>
   } else {
   <div class="ratings">
@@ -41,7 +41,8 @@
   }
 </a>
 }
-@if(myId != u.id) {
+
+@if(myId != u.id && u.enabled) {
 <table class="actions">
   <tbody>
     <tr>
@@ -67,4 +68,11 @@
   </tbody>
 </table>
 }
+}
+
+@if(isGranted(_.UserSpy)) {
+<div class="mod_info_box">
+  @if(u.lameOrTroll || u.disabled) { <span class="mod_marks">@userMarks(u, None)</span> }
+  <p>@trans.nbGames.plural(u.count.game, u.count.game.localize), @momentFromNow(u.createdAt)</p>
+</div>
 }

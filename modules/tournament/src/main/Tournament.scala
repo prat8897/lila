@@ -6,6 +6,7 @@ import ornicar.scalalib.Random
 import chess.Clock.{ Config => ClockConfig }
 import chess.{ Speed, Mode, StartingPosition }
 import lila.game.PerfPicker
+import lila.rating.PerfType
 import lila.user.User
 import lila.user.UserRepo.lichessId
 
@@ -38,17 +39,19 @@ case class Tournament(
 
   def isPrivate = `private`
 
-  def fullName =
-    if (isMarathonOrUnique) name
-    else if (isScheduled && clock.hasIncrement) s"$name Inc $system"
-    else s"$name $system"
+  def fullName = schedule.map(_.freq).fold(s"$name $system") {
+    case Schedule.Freq.ExperimentalMarathon | Schedule.Freq.Marathon | Schedule.Freq.Unique => name
+    case Schedule.Freq.Shield => s"$name $system"
+    case _ if clock.hasIncrement => s"$name Inc $system"
+    case _ => s"$name $system"
+  }
 
   def isMarathon = schedule.map(_.freq) exists {
     case Schedule.Freq.ExperimentalMarathon | Schedule.Freq.Marathon => true
     case _ => false
   }
 
-  def isUnique = schedule.map(_.freq) contains Schedule.Freq.Unique
+  def isUnique = schedule.map(_.freq) has Schedule.Freq.Unique
 
   def isMarathonOrUnique = isMarathon || isUnique
 
@@ -87,7 +90,7 @@ case class Tournament(
 
   def speed = Speed(clock)
 
-  def perfType = PerfPicker.perfType(speed, variant, none)
+  def perfType: Option[PerfType] = PerfPicker.perfType(speed, variant, none)
   def perfLens = PerfPicker.mainOrDefault(speed, variant, none)
 
   def durationString =
@@ -110,6 +113,8 @@ case class Tournament(
   }
 
   def nonLichessCreatedBy = (createdBy != lichessId) option createdBy
+
+  def ratingVariant = if (variant.fromPosition) chess.variant.Standard else variant
 
   override def toString = s"$id $startsAt $fullName $minutes minutes, $clock"
 }

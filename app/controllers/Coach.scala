@@ -9,7 +9,7 @@ import views._
 
 object Coach extends LilaController {
 
-  private val api = Env.coach.api
+  private def api = Env.coach.api
 
   def allDefault(page: Int) = all(CoachPager.Order.Login.key, page)
 
@@ -44,12 +44,12 @@ object Coach extends LilaController {
         lila.coach.CoachReviewForm.form.bindFromRequest.fold(
           err => Redirect(routes.Coach.show(c.user.username)).fuccess,
           data => {
-            if (data.score < 4) Env.report.api.create(lila.report.Report.make(
+            if (data.score < 4) Env.report.api.create(lila.report.Report.Candidate(
+              reporter = lila.report.Reporter(me),
               suspect = lila.report.Suspect(c.user),
               reason = lila.report.Reason.Other,
-              text = s"[COACH REVIEW rating=${data.score}/5] ${data.text}",
-              reporter = lila.report.Reporter(me)
-            ), lila.report.Suspect(c.user), lila.report.Reporter(me))
+              text = s"[COACH REVIEW rating=${data.score}/5] ${data.text}"
+            ))
             api.reviews.add(me, c.coach, data) map { review =>
               Redirect(routes.Coach.show(c.user.username))
             }

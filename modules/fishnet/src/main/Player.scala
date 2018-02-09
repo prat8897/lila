@@ -20,17 +20,18 @@ final class Player(
   }
 
   private def makeWork(game: Game, level: Int): Fu[Work.Move] =
-    if (game.toChess.situation playable true)
+    if (game.situation playable true)
       if (game.turns <= maxPlies) GameRepo.initialFen(game) zip uciMemo.get(game) map {
         case (initialFen, moves) => Work.Move(
           _id = Work.makeId,
           game = Work.Game(
             id = game.id,
             initialFen = initialFen map FEN.apply,
+            studyId = none,
             variant = game.variant,
             moves = moves mkString " "
           ),
-          currentFen = FEN(Forsyth >> game.toChess),
+          currentFen = FEN(Forsyth >> game.chess),
           level = level,
           clock = game.clock.map { clk =>
             Work.Clock(

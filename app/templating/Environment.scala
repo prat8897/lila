@@ -42,6 +42,7 @@ object Environment
   val isGloballyCrawlable = apiEnv.Net.Crawlable
 
   def isProd = apiEnv.isProd
+  def isStage = apiEnv.isStage
 
   def apiVersion = lila.api.Mobile.Api.currentVersion
 
@@ -53,12 +54,8 @@ object Environment
 
   def contactEmailLink = Html(s"""<a href="mailto:$contactEmail">$contactEmail</a>""")
 
-  def globalCasualOnlyMessage = Env.setup.CasualOnly option {
-    "Due to temporary maintenance on the servers, only casual games are available."
-  }
-
-  def reportNbUnprocessed: Int =
-    lila.report.Env.current.api.nbUnprocessed.awaitOrElse(10.millis, 0)
+  def reportNbOpen: Int =
+    lila.report.Env.current.api.nbOpen.awaitOrElse(10.millis, 0)
 
   def isChatPanicEnabled =
     lila.chat.Env.current.panic.enabled

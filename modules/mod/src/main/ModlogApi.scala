@@ -41,9 +41,12 @@ final class ModlogApi(coll: Coll) {
     Modlog(mod, user.some, Modlog.reopenAccount)
   }
 
-  def setTitle(mod: String, user: String, title: Option[String]) = add {
-    val name = title flatMap lila.user.User.titlesMap.get
-    Modlog(mod, user.some, name.isDefined.fold(Modlog.setTitle, Modlog.removeTitle), details = name)
+  def addTitle(mod: String, user: String, title: String) = add {
+    Modlog(mod, user.some, Modlog.setTitle, title.some)
+  }
+
+  def removeTitle(mod: String, user: String) = add {
+    Modlog(mod, user.some, Modlog.removeTitle)
   }
 
   def setEmail(mod: String, user: String) = add {
@@ -106,10 +109,6 @@ final class ModlogApi(coll: Coll) {
     Modlog(mod, user.some, Modlog.permissions, details = permissions.mkString(", ").some)
   }
 
-  def kickFromRankings(mod: String, user: String) = add {
-    Modlog(mod, user.some, Modlog.kickFromRankings)
-  }
-
   def reportban(mod: Mod, sus: Suspect, v: Boolean) = add {
     Modlog.make(mod, sus, if (v) Modlog.reportban else Modlog.unreportban)
   }
@@ -127,7 +126,15 @@ final class ModlogApi(coll: Coll) {
   }
 
   def cli(by: String, command: String) = add {
-    Modlog(by, none, "cli", command.some)
+    Modlog(by, none, Modlog.cli, command.some)
+  }
+
+  def garbageCollect(mod: Mod, sus: Suspect) = add {
+    Modlog.make(mod, sus, Modlog.garbageCollect)
+  }
+
+  def rankban(mod: Mod, sus: Suspect, v: Boolean) = add {
+    Modlog.make(mod, sus, if (v) Modlog.rankban else Modlog.unrankban)
   }
 
   def recent = coll.find($empty).sort($sort naturalDesc).cursor[Modlog]().gather[List](100)
